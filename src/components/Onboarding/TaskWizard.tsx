@@ -7,49 +7,54 @@ interface TaskWizardProps {
     onSubmit: (task: string) => void;
 }
 
-const TEMPLATES = [
-    {
-        icon: '🌐',
-        title: 'Build a Website',
-        description: 'Landing page, portfolio, or business site',
-        prompt: 'Create a modern landing page for'
-    },
-    {
-        icon: '🔍',
-        title: 'Research & Analyze',
-        description: 'Find information and summarize insights',
-        prompt: 'Research and summarize information about'
-    },
-    {
-        icon: '📊',
-        title: 'Organize Data',
-        description: 'Scrape, collect, or structure information',
-        prompt: 'Collect and organize data about'
-    },
-    {
-        icon: '🤖',
-        title: 'Automate a Task',
-        description: 'Set up automated workflows',
-        prompt: 'Help me automate'
-    }
+const QUICK_IDEAS = [
+    { label: 'Website', icon: '🌐' },
+    { label: 'Research', icon: '🔍' },
+    { label: 'Automation', icon: '🤖' },
+    { label: 'Data', icon: '📊' },
 ];
 
 export default function TaskWizard({ onSubmit }: TaskWizardProps) {
-    const [step, setStep] = useState<'templates' | 'input'>('templates');
-    const [selectedTemplate, setSelectedTemplate] = useState<typeof TEMPLATES[0] | null>(null);
-    const [userInput, setUserInput] = useState('');
-
-    const handleTemplateSelect = (template: typeof TEMPLATES[0]) => {
-        setSelectedTemplate(template);
-        setStep('input');
-    };
+    const [prompt, setPrompt] = useState('');
+    const [showDetails, setShowDetails] = useState(false);
+    const [details, setDetails] = useState({
+        projectName: '',
+        style: '',
+        audience: ''
+    });
 
     const handleSubmit = () => {
-        if (!userInput.trim()) return;
-        const fullPrompt = selectedTemplate
-            ? `${selectedTemplate.prompt} ${userInput}`
-            : userInput;
+        if (!prompt.trim()) return;
+
+        // Build the full prompt with optional details
+        let fullPrompt = prompt.trim();
+
+        const addedDetails = [];
+        if (details.projectName) addedDetails.push(`Project: ${details.projectName}`);
+        if (details.style) addedDetails.push(`Style: ${details.style}`);
+        if (details.audience) addedDetails.push(`Target audience: ${details.audience}`);
+
+        if (addedDetails.length > 0) {
+            fullPrompt += `\n\nAdditional context:\n${addedDetails.join('\n')}`;
+        }
+
         onSubmit(fullPrompt);
+    };
+
+    const handleQuickIdea = (idea: string) => {
+        const starters: Record<string, string> = {
+            'Website': 'Build a modern website for ',
+            'Research': 'Research and analyze ',
+            'Automation': 'Create an automation that ',
+            'Data': 'Collect and organize data about ',
+        };
+        setPrompt(starters[idea] || `Help me with ${idea.toLowerCase()}: `);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && e.metaKey) {
+            handleSubmit();
+        }
     };
 
     return (
@@ -62,79 +67,104 @@ export default function TaskWizard({ onSubmit }: TaskWizardProps) {
                 <p className={styles.tagline}>Your AI team, working in parallel</p>
             </div>
 
-            {step === 'templates' && (
-                <div className={styles.templatesSection}>
-                    <h2 className={styles.sectionTitle}>What would you like to accomplish?</h2>
-                    <div className={styles.templates}>
-                        {TEMPLATES.map((template, i) => (
-                            <button
-                                key={i}
-                                className={styles.templateCard}
-                                onClick={() => handleTemplateSelect(template)}
-                            >
-                                <span className={styles.templateIcon}>{template.icon}</span>
-                                <span className={styles.templateTitle}>{template.title}</span>
-                                <span className={styles.templateDesc}>{template.description}</span>
-                            </button>
-                        ))}
-                    </div>
-                    <div className={styles.divider}>
-                        <span>or describe anything</span>
-                    </div>
-                    <div className={styles.freeformInput}>
-                        <input
-                            type="text"
-                            placeholder="Tell me what you want to build..."
-                            value={userInput}
-                            onChange={(e) => setUserInput(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && userInput.trim()) {
-                                    onSubmit(userInput);
-                                }
-                            }}
-                            className={styles.mainInput}
-                        />
-                        <button
-                            className={styles.submitButton}
-                            onClick={() => userInput.trim() && onSubmit(userInput)}
-                            disabled={!userInput.trim()}
-                        >
-                            Start Building →
-                        </button>
-                    </div>
-                </div>
-            )}
+            <div className={styles.mainSection}>
+                <h2 className={styles.promptLabel}>What would you like to accomplish?</h2>
 
-            {step === 'input' && selectedTemplate && (
-                <div className={styles.inputSection}>
-                    <button className={styles.backButton} onClick={() => setStep('templates')}>
-                        ← Back
-                    </button>
-                    <div className={styles.selectedTemplate}>
-                        <span className={styles.bigIcon}>{selectedTemplate.icon}</span>
-                        <h2>{selectedTemplate.title}</h2>
-                    </div>
-                    <div className={styles.promptBuilder}>
-                        <span className={styles.promptPrefix}>{selectedTemplate.prompt}</span>
-                        <input
-                            type="text"
-                            placeholder="your project details..."
-                            value={userInput}
-                            onChange={(e) => setUserInput(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                            className={styles.detailInput}
-                            autoFocus
-                        />
-                    </div>
-                    <button
-                        className={styles.launchButton}
-                        onClick={handleSubmit}
-                        disabled={!userInput.trim()}
-                    >
-                        Launch Agent →
-                    </button>
+                <div className={styles.textareaWrapper}>
+                    <textarea
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder="Describe your project, task, or question..."
+                        className={styles.mainTextarea}
+                        rows={4}
+                        autoFocus
+                    />
+                    <span className={styles.hint}>⌘ + Enter to submit</span>
                 </div>
-            )}
+
+                {/* Collapsible Details Section */}
+                <button
+                    className={styles.detailsToggle}
+                    onClick={() => setShowDetails(!showDetails)}
+                >
+                    <span className={styles.toggleIcon}>{showDetails ? '−' : '+'}</span>
+                    Add details (optional)
+                </button>
+
+                {showDetails && (
+                    <div className={styles.detailsPanel}>
+                        <div className={styles.detailField}>
+                            <label>Project name</label>
+                            <input
+                                type="text"
+                                value={details.projectName}
+                                onChange={(e) => setDetails({ ...details, projectName: e.target.value })}
+                                placeholder="e.g., My Portfolio"
+                            />
+                        </div>
+                        <div className={styles.detailField}>
+                            <label>Style / Theme</label>
+                            <input
+                                type="text"
+                                value={details.style}
+                                onChange={(e) => setDetails({ ...details, style: e.target.value })}
+                                placeholder="e.g., Minimal, dark mode, modern"
+                            />
+                        </div>
+                        <div className={styles.detailField}>
+                            <label>Target audience</label>
+                            <input
+                                type="text"
+                                value={details.audience}
+                                onChange={(e) => setDetails({ ...details, audience: e.target.value })}
+                                placeholder="e.g., Developers, small businesses"
+                            />
+                        </div>
+                    </div>
+                )}
+
+                <button
+                    className={styles.submitButton}
+                    onClick={handleSubmit}
+                    disabled={!prompt.trim()}
+                >
+                    Start Building →
+                </button>
+
+                {/* Quick Ideas */}
+                <div className={styles.quickIdeas}>
+                    <span className={styles.quickLabel}>Quick ideas:</span>
+                    {QUICK_IDEAS.map((idea) => (
+                        <button
+                            key={idea.label}
+                            className={styles.ideaChip}
+                            onClick={() => handleQuickIdea(idea.label)}
+                        >
+                            {idea.icon} {idea.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Chrome Extension Banner */}
+                <div className={styles.desktopBanner}>
+                    <div className={styles.bannerContent}>
+                        <span className={styles.bannerIcon}>🧩</span>
+                        <div className={styles.bannerText}>
+                            <strong>Get Lulo for Chrome</strong>
+                            <span>Browser automation + AI assistant</span>
+                        </div>
+                    </div>
+                    <a
+                        href="https://chrome.google.com/webstore"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={styles.downloadButton}
+                    >
+                        Add to Chrome
+                    </a>
+                </div>
+            </div>
         </div>
     );
 }

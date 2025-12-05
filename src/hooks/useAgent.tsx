@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 export interface File {
     name: string;
@@ -12,16 +12,34 @@ export interface Message {
     timestamp: Date;
 }
 
+export interface StepData {
+    url?: string;
+    filename?: string;
+    content?: string;
+    type?: 'file' | 'folder';
+}
+
 export interface Step {
     action: 'BROWSE' | 'WRITE' | 'THINK';
     description: string;
-    data: any;
+    data: StepData | null;
 }
 
 export interface AgentResult {
     filesCreated: string[];
     sitesVisited: string[];
     completedAt: Date;
+}
+
+export interface GeneratedCode {
+    html: string;
+    css: string;
+    js: string;
+}
+
+export interface GeneratedFile {
+    name: string;
+    content: string;
 }
 
 export interface AgentState {
@@ -39,7 +57,12 @@ export interface AgentState {
     result: AgentResult | null;
     messages: Message[];
     sendMessage: (message: string) => void;
+    generatedCode: GeneratedCode;
+    generatedFiles: GeneratedFile[];
 }
+
+// Check if running in Electron (will be checked in effect)
+// const isElectron = typeof window !== 'undefined' && !!window.electronAPI?.isElectron;
 
 export function useAgent(id: string, initialPrompt: string) {
     const [files, setFiles] = useState<File[]>([
@@ -57,14 +80,56 @@ export function useAgent(id: string, initialPrompt: string) {
     const [hasError, setHasError] = useState(false);
     const [result, setResult] = useState<AgentResult | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
+    const [generatedCode, setGeneratedCode] = useState<GeneratedCode>({ html: '', css: '', js: '' });
+    const [generatedFiles, setGeneratedFiles] = useState<GeneratedFile[]>([]);
+    const [isElectron, setIsElectron] = useState(false);
+
+    // Detect Electron environment on mount
+    useEffect(() => {
+        setIsElectron(typeof window !== 'undefined' && !!window.electronAPI?.isElectron);
+    }, []);
 
     const hasFetched = useRef(false);
     const sitesVisited = useRef<string[]>([]);
     const filesCreated = useRef<string[]>([]);
+    const browserLaunched = useRef(false);
+    const currentProjectPath = useRef<string | null>(null);
 
     // Add message to history
     const addMessage = useCallback((role: 'user' | 'agent', content: string) => {
         setMessages(prev => [...prev, { role, content, timestamp: new Date() }]);
+    }, []);
+
+    // Browse URL - uses Electron APIs if available, falls back to web API
+    const browseUrl = useCallback(async (targetUrl: string): Promise<string | null> => {
+        if (isElectron && window.electronAPI) {
+            const api = window.electronAPI;
+
+            // Launch browser if not already running
+            if (!browserLaunched.current) {
+                await api.launchBrowser();
+                browserLaunched.current = true;
+                await new Promise(r => setTimeout(r, 1000)); // Wait for browser to be ready
+            }
+
+            // Navigate with glow effect
+            api.updateBrowserStatus('Navigating...');
+            await api.navigateTo(targetUrl);
+            api.updateBrowserStatus('Lulo is controlling this browser');
+
+            // Take screenshot
+            const screenshot = await api.takeScreenshot();
+            return screenshot;
+        } else {
+            // Web fallback - use API route
+            const res = await fetch('/api/browser', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: targetUrl })
+            });
+            const data = await res.json();
+            return data.screenshot || null;
+        }
     }, []);
 
     // Execute steps from API response
@@ -75,12 +140,14 @@ export function useAgent(id: string, initialPrompt: string) {
         for (let i = 0; i < steps.length; i++) {
             const step = steps[i];
 
-            if (step.action === 'BROWSE') {
+            if (step.action === 'BROWSE' && step.data?.url) {
+                const browseUrlTarget = step.data.url;
                 setStatus('Browsing');
                 setThought(step.description);
-                setUrl(step.data.url);
-                sitesVisited.current.push(step.data.url);
+                setUrl(browseUrlTarget);
+                sitesVisited.current.push(browseUrlTarget);
 
+                // Show loading state
                 setBrowserContent(
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
                         <div style={{
@@ -92,33 +159,28 @@ export function useAgent(id: string, initialPrompt: string) {
                             marginBottom: '1rem',
                             animation: 'spin 1s linear infinite'
                         }} />
-                        Loading...
+                        {isElectron ? 'Controlling browser...' : 'Loading...'}
                     </div>
                 );
 
                 try {
-                    const res = await fetch('/api/browser', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ url: step.data.url })
-                    });
-                    const data = await res.json();
+                    const screenshot = await browseUrl(browseUrlTarget);
 
-                    if (data.screenshot) {
+                    if (screenshot) {
                         setBrowserContent(
-                            <img src={data.screenshot} alt="Browser" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                            <img src={screenshot} alt="Browser" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                         );
                     } else {
                         setBrowserContent(
                             <div style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
-                                Page loaded
+                                {isElectron ? '🌐 Browser window open' : 'Page loaded'}
                             </div>
                         );
                     }
-                } catch (e) {
+                } catch {
                     setBrowserContent(
                         <div style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
-                            Browsed {step.data.url}
+                            Browsed {browseUrlTarget}
                         </div>
                     );
                 }
@@ -127,14 +189,48 @@ export function useAgent(id: string, initialPrompt: string) {
                 await new Promise(r => setTimeout(r, 2000));
             }
 
-            else if (step.action === 'WRITE') {
+            else if (step.action === 'WRITE' && step.data?.filename && step.data?.type) {
+                const filename = step.data.filename;
+                const fileType = step.data.type;
+                const content = step.data.content || '';
+
                 setStatus('Writing');
-                setThought(`Creating ${step.data.filename}...`);
-                filesCreated.current.push(step.data.filename);
+                setThought(`Creating ${filename}...`);
+                filesCreated.current.push(filename);
+
+                // Track generated code for live preview
+                setGeneratedFiles(prev => [...prev, { name: filename, content }]);
+
+                // Update generatedCode based on file type
+                if (filename.endsWith('.html') || filename.endsWith('.htm')) {
+                    setGeneratedCode(prev => ({ ...prev, html: content }));
+                } else if (filename.endsWith('.css')) {
+                    setGeneratedCode(prev => ({ ...prev, css: content }));
+                } else if (filename.endsWith('.js')) {
+                    setGeneratedCode(prev => ({ ...prev, js: content }));
+                }
+
+                // Update glow status if in Electron
+                if (isElectron && window.electronAPI) {
+                    window.electronAPI.updateBrowserStatus(`Writing ${filename}...`);
+
+                    // Save file locally if we have a project path
+                    if (currentProjectPath.current) {
+                        try {
+                            await window.electronAPI.saveFile(
+                                currentProjectPath.current,
+                                filename,
+                                content
+                            );
+                        } catch (e) {
+                            console.error('Failed to save file locally:', e);
+                        }
+                    }
+                }
 
                 setFiles(prev => [...prev, {
-                    name: step.data.filename,
-                    type: step.data.type,
+                    name: filename,
+                    type: fileType,
                     isNew: true
                 }]);
 
@@ -150,7 +246,7 @@ export function useAgent(id: string, initialPrompt: string) {
                         color: 'var(--text-primary)',
                         border: '1px solid var(--border-subtle)'
                     }}>
-                        {step.data.content}
+                        {content}
                     </pre>
                 );
                 await new Promise(r => setTimeout(r, 1500));
@@ -159,13 +255,19 @@ export function useAgent(id: string, initialPrompt: string) {
             else if (step.action === 'THINK') {
                 setStatus('Thinking');
                 setThought(step.description);
+
+                // Update glow status if in Electron
+                if (isElectron && window.electronAPI) {
+                    window.electronAPI.updateBrowserStatus('Thinking...');
+                }
+
                 await new Promise(r => setTimeout(r, 1000));
             }
 
             currentProgress += progressPerStep;
             setProgress(Math.min(currentProgress, 90));
         }
-    }, []);
+    }, [browseUrl]);
 
     // Run agent with a prompt
     const runAgent = useCallback(async (prompt: string, isFollowUp = false) => {
@@ -181,6 +283,29 @@ export function useAgent(id: string, initialPrompt: string) {
             }
             setIsActive(true);
             setHasError(false);
+
+            // Update glow status if in Electron
+            if (isElectron && window.electronAPI) {
+                window.electronAPI.updateBrowserStatus('Planning...');
+
+                // Create a project folder for this task (if not a follow-up)
+                if (!isFollowUp && !currentProjectPath.current) {
+                    try {
+                        // Create project name from first few words of prompt
+                        const projectName = prompt
+                            .slice(0, 50)
+                            .replace(/[^a-zA-Z0-9\s]/g, '')
+                            .trim()
+                            .replace(/\s+/g, '-')
+                            .toLowerCase() || 'new-project';
+
+                        currentProjectPath.current = await window.electronAPI.createProject(projectName);
+                        console.log('Created project at:', currentProjectPath.current);
+                    } catch (e) {
+                        console.error('Failed to create project:', e);
+                    }
+                }
+            }
 
             const res = await fetch('/api/agent', {
                 method: 'POST',
@@ -213,13 +338,19 @@ export function useAgent(id: string, initialPrompt: string) {
             setThought('Done! What would you like me to do next?');
             setProgress(100);
             setIsActive(false);
+
+            // Update glow status if in Electron
+            if (isElectron && window.electronAPI) {
+                window.electronAPI.updateBrowserStatus('Task complete ✓');
+            }
+
             setResult({
                 filesCreated: [...filesCreated.current],
                 sitesVisited: [...new Set(sitesVisited.current)],
                 completedAt: new Date()
             });
 
-        } catch (err) {
+        } catch {
             setStatus('Error');
             setThought('Failed to connect. Please try again.');
             setHasError(true);
@@ -235,14 +366,19 @@ export function useAgent(id: string, initialPrompt: string) {
         runAgent(message, true);
     }, [addMessage, runAgent]);
 
-    // Initial run
-    useEffect(() => {
-        if (hasFetched.current || !initialPrompt) return;
-        hasFetched.current = true;
-
-        addMessage('user', initialPrompt);
-        runAgent(initialPrompt);
-    }, [initialPrompt, addMessage, runAgent]);
+    // Initial run - use initialization pattern to avoid setState in effect
+    const hasInitialized = useRef(false);
+    if (!hasInitialized.current && initialPrompt) {
+        hasInitialized.current = true;
+        // Schedule the initial run for after mount
+        setTimeout(() => {
+            if (!hasFetched.current) {
+                hasFetched.current = true;
+                setMessages([{ role: 'user', content: initialPrompt, timestamp: new Date() }]);
+                runAgent(initialPrompt);
+            }
+        }, 0);
+    }
 
     return {
         id,
@@ -258,6 +394,8 @@ export function useAgent(id: string, initialPrompt: string) {
         hasError,
         result,
         messages,
-        sendMessage
+        sendMessage,
+        generatedCode,
+        generatedFiles
     };
 }

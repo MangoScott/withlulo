@@ -1,26 +1,94 @@
 {
-  "name": "temp_app",
-  "version": "0.1.0",
+  "name": "lulo-desktop",
+  "version": "1.0.0",
+  "description": "Your AI team, working in parallel - Desktop App",
+  "author": "Lulo Team",
   "private": true,
+  "main": "electron/main.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "pages:build": "npx @cloudflare/next-on-pages",
+    "pages:deploy": "npm run pages:build && wrangler pages deploy .vercel/output/static --project-name lulo-agent --commit-dirty=true",
+    "pages:preview": "npm run pages:build && wrangler pages dev .vercel/output/static",
+    "electron:dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron:build": "next build && electron-builder --mac",
+    "electron:build:all": "next build && electron-builder --mac --win"
+  },
+  "build": {
+    "appId": "com.lulo.desktop",
+    "productName": "Lulo",
+    "artifactName": "Lulo-${version}-${os}.${ext}",
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "assets/icon.icns",
+      "darkModeSupport": true
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "dmg": {
+      "title": "Lulo",
+      "backgroundColor": "#FAF8F5",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "electron/**/*",
+      ".next/**/*",
+      "public/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "compression": "maximum"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
-    "next": "16.0.7",
+    "next": "^15.1.0",
     "puppeteer": "^24.32.0",
-    "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.13.16",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^9.2.1",
+    "electron": "^39.2.6",
+    "electron-builder": "^26.0.12",
     "eslint": "^9",
     "eslint-config-next": "16.0.7",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wait-on": "^9.0.3",
+    "wrangler": "^4.53.0"
   }
 }

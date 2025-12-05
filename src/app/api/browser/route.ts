@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import puppeteer from "puppeteer";
+
+export const runtime = 'edge';
 
 export async function POST(req: Request) {
     try {
@@ -9,26 +10,15 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "URL is required" }, { status: 400 });
         }
 
-        const browser = await puppeteer.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
+        // Puppeteer does not run on Edge Runtime / Cloudflare Pages.
+        // Returning a placeholder image service or mock response.
 
-        const page = await browser.newPage();
-        await page.setViewport({ width: 1280, height: 800 });
-
-        // Navigate to URL
-        await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-
-        // Take screenshot
-        const screenshot = await page.screenshot({ encoding: 'base64' });
-        const title = await page.title();
-
-        await browser.close();
+        // Using a reliable placeholder image service
+        const screenshotUrl = `https://image.thum.io/get/width/1200/crop/800/${url}`;
 
         return NextResponse.json({
-            screenshot: `data:image/png;base64,${screenshot}`,
-            title
+            screenshot: screenshotUrl,
+            title: `Viewing: ${url}`
         });
 
     } catch (error) {

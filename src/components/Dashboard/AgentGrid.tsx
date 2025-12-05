@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import styles from './Dashboard.module.css';
 import { useAgent } from '@/hooks/useAgent';
 import AgentCard from './AgentCard';
@@ -11,17 +11,22 @@ interface AgentGridProps {
 }
 
 export default function AgentGrid({ initialPrompt }: AgentGridProps) {
-    const [agents, setAgents] = useState<{ id: string, prompt: string }[]>([]);
+    // Use ref to track if initial agent was already created
+    const initializedRef = useRef(false);
+
+    // Initialize with the initial agent if provided
+    const getInitialAgents = () => {
+        if (initialPrompt && !initializedRef.current) {
+            initializedRef.current = true;
+            const id = Math.random().toString(36).substr(2, 9);
+            return [{ id, prompt: initialPrompt }];
+        }
+        return [];
+    };
+
+    const [agents, setAgents] = useState<{ id: string, prompt: string }[]>(getInitialAgents);
     const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
     const [newPrompt, setNewPrompt] = useState('');
-
-    // Auto-spawn first agent from initial prompt
-    useEffect(() => {
-        if (initialPrompt && agents.length === 0) {
-            const id = Math.random().toString(36).substr(2, 9);
-            setAgents([{ id, prompt: initialPrompt }]);
-        }
-    }, [initialPrompt]);
 
     const addAgent = () => {
         if (!newPrompt) return;
@@ -100,7 +105,7 @@ function AgentContainer({
 
     return (
         <>
-            <AgentCard agent={agent} onClick={onSelect} />
+            <AgentCard agent={agent} onExpand={onSelect} />
             {isSelected && (
                 <div className={styles.dashboardOverlay}>
                     <Dashboard agent={agent} onBack={onClose} />

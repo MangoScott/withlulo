@@ -13,6 +13,16 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      // Allow refs in render for initialization patterns
+      "react-hooks/refs": "off",
+      // Allow setState in effects for initialization
+      "react-hooks/set-state-in-effect": "off",
+      // Allow unescaped entities
+      "react/no-unescaped-entities": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

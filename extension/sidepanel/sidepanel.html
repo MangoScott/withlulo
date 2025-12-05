@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lulo</title>
+    <link rel="stylesheet" href="sidepanel.css">
+</head>
+
+<body>
+    <div class="panel">
+        <header class="header">
+            <h1 class="logo">
+                <span class="logo-icon">✦</span>
+                Lulo
+            </h1>
+            <p class="tagline">Your AI team, working in parallel</p>
+        </header>
+
+        <div class="chat-container" id="chatContainer">
+            <div class="welcome-message">
+                <p>👋 Hi! I'm Lulo, your AI assistant.</p>
+                <p>I can help you automate tasks, research information, and interact with web pages.</p>
+            </div>
+        </div>
+
+        <div class="input-container">
+            <div class="input-wrapper">
+                <textarea id="taskInput" placeholder="What would you like to accomplish?" rows="2"></textarea>
+                <button id="submitBtn" class="submit-btn" disabled>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                    </svg>
+                </button>
+            </div>
+            <div class="quick-actions">
+                <button class="action-chip" data-action="screenshot">📸 Screenshot</button>
+                <button class="action-chip" data-action="extract">📄 Extract text</button>
+                <button class="action-chip" data-action="click">👆 Click element</button>
+            </div>
+        </div>
+    </div>
+    <script src="sidepanel.js"></script>
+</body>
+
+</html>

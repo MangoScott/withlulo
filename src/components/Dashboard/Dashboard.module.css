@@ -1,23 +1,21 @@
-/* Dashboard Detail View - Conversational Interface */
-.dashboard {
-    display: grid;
-    grid-template-columns: 260px 1fr;
-    grid-template-rows: auto 1fr;
-    gap: 1rem;
+/* =========================================
+   Simple Dashboard Layout (New Detail View)
+   ========================================= */
+
+.simpleDashboard {
+    display: flex;
+    flex-direction: column;
     height: 100vh;
-    padding: 1rem;
     background: var(--bg-primary);
 }
 
-.header {
-    grid-column: 1 / -1;
+.simpleHeader {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 1.5rem;
     background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-md);
+    border-bottom: 1px solid var(--border-subtle);
+    gap: 1.5rem;
 }
 
 .backButton {
@@ -25,7 +23,6 @@
     border: none;
     color: var(--text-muted);
     font-size: 0.9rem;
-    font-weight: 500;
     cursor: pointer;
     padding: 0.5rem;
     transition: color 0.2s;
@@ -35,6 +32,18 @@
     color: var(--text-primary);
 }
 
+.headerInfo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.taskName {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
 .statusPill {
     display: flex;
     align-items: center;
@@ -42,7 +51,7 @@
     font-size: 0.8rem;
     color: var(--text-secondary);
     background: var(--bg-secondary);
-    padding: 0.4rem 0.75rem;
+    padding: 0.3rem 0.6rem;
     border-radius: var(--radius-pill);
 }
 
@@ -58,6 +67,199 @@
     animation: pulse 1.5s ease-in-out infinite;
 }
 
+/* Main Content Split */
+.simpleContent {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    overflow: hidden;
+}
+
+/* Left: Live Preview */
+.previewSection {
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    /* Always white for preview */
+    position: relative;
+}
+
+.previewHeader {
+    height: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1rem;
+    background: #f5f5f5;
+    border-bottom: 1px solid #e0e0e0;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.deployToggle {
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    padding: 0.3rem 0.8rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.deployToggle:hover {
+    background: var(--accent-hover);
+}
+
+.previewContainer {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: white;
+}
+
+.livePreviewFrame {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.previewPlaceholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    color: #aaa;
+}
+
+.previewIcon {
+    font-size: 2rem;
+    opacity: 0.5;
+}
+
+/* Right: Chat */
+.chatSection {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-card);
+    border-left: 1px solid var(--border-subtle);
+}
+
+.chatHeader {
+    padding: 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.messageList {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.message {
+    max-width: 90%;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.userMessage {
+    align-self: flex-end;
+    background: var(--accent-primary);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.agentMessage {
+    align-self: flex-start;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-bottom-left-radius: 4px;
+}
+
+.chatInputArea {
+    padding: 1rem;
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    gap: 0.75rem;
+}
+
+.chatInput {
+    flex: 1;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 0.6rem 0.875rem;
+    font-size: 0.9rem;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    resize: none;
+    outline: none;
+}
+
+.sendButton {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    border: none;
+    background: var(--accent-primary);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sendButton:disabled {
+    background: var(--border-subtle);
+    cursor: not-allowed;
+}
+
+/* Thought Banner */
+.thoughtBanner {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+    padding: 0.6rem 1rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+}
+
+.thoughtSpinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 @keyframes pulse {
 
     0%,
@@ -66,127 +268,217 @@
     }
 
     50% {
-        opacity: 0.4;
+        opacity: 0.5;
     }
 }
 
-.sidebar {
-    grid-row: 2;
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-md);
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.sidebarTitle {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-muted);
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-}
-
-.fileTree {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.file {
+/* Deploy Overlay */
+.deployOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    border-radius: var(--radius-sm);
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    transition: all 0.15s var(--ease-smooth);
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(2px);
 }
 
-.file:hover {
-    background: var(--bg-secondary);
+.deployModal {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
 }
 
-.file.new {
-    color: var(--accent-primary);
-    font-weight: 500;
-}
-
-.main {
-    grid-row: 2;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.browserFrame {
-    flex: 1;
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-md);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-.browserHeader {
-    background: var(--bg-secondary);
-    padding: 0.75rem 1rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    border-bottom: 1px solid var(--border-subtle);
-}
-
-.trafficLights {
-    display: flex;
-    gap: 6px;
-}
-
-.trafficLights>div {
-    width: 10px;
-    height: 10px;
+.closeButton {
+    position: absolute;
+    top: -1rem;
+    right: -1rem;
+    background: white;
+    border: none;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #666;
+    z-index: 10;
 }
 
-.urlBar {
-    flex: 1;
+/* Deploy Panel Styles */
+.deployPanel {
     background: var(--bg-card);
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
     border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-sm);
-    padding: 0.4rem 0.75rem;
+    width: 100%;
+}
+
+.deployHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.deployIcon {
+    font-size: 1.5rem;
+}
+
+.deployHeader h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+}
+
+.deployOptions {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.deployOption {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem 1rem;
+    background: var(--bg-secondary);
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.deployOption:hover {
+    background: var(--bg-hover);
+    transform: translateY(-2px);
+}
+
+.deployOption.selected {
+    border-color: var(--accent-primary);
+    background: rgba(217, 119, 87, 0.05);
+}
+
+.deployOption span:first-child {
+    font-size: 1.75rem;
+}
+
+.deployOption span:nth-child(2) {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.deployBadge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+    background: var(--bg-primary);
+    border-radius: var(--radius-pill);
+    color: var(--text-muted);
+}
+
+.deploySteps {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.deployStep {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    opacity: 0.5;
+    transition: all 0.3s;
+}
+
+.deployStep.activeStep {
+    opacity: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--accent-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.deployStep.completedStep {
+    opacity: 0.7;
+    background: rgba(74, 155, 127, 0.05);
+}
+
+.stepNumber {
+    width: 28px;
+    height: 28px;
+    background: var(--bg-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.activeStep .stepNumber {
+    background: var(--accent-primary);
+    color: white;
+}
+
+.completedStep .stepNumber {
+    background: #4A9B7F;
+    color: white;
+    font-size: 0.75rem;
+}
+
+.stepContent {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.stepContent strong {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.stepContent span {
     font-size: 0.8rem;
     color: var(--text-muted);
 }
 
-.viewport {
-    flex: 1;
-    position: relative;
-    background: var(--bg-card);
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+.stepAction {
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.2s;
 }
 
-.cursor {
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 3L10.07 19.97L12.58 12.58L19.97 10.07L3 3Z' fill='%23D97757' stroke='white' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E");
-    background-size: contain;
-    background-repeat: no-repeat;
-    transition: all 0.4s var(--ease-smooth);
-    z-index: 10;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+.stepAction:hover {
+    background: var(--accent-hover);
 }
 
-/* ===== Agent Grid Layout ===== */
+
+/* =========================================
+   Agent Grid Layout (Original)
+   ========================================= */
+
 .gridContainer {
     display: flex;
     flex-direction: column;
@@ -301,7 +593,10 @@
     background: var(--bg-primary);
 }
 
-/* ===== Clean Agent Card ===== */
+/* =========================================
+   Enhanced Agent Card (Original)
+   ========================================= */
+
 .agentCard {
     background: var(--bg-card);
     border: 1px solid var(--border-subtle);
@@ -335,8 +630,10 @@
 }
 
 .cardStatus {
-    font-size: 0.75rem;
-    font-weight: 500;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
     color: var(--accent-primary);
     background: var(--accent-subtle);
     padding: 0.25rem 0.6rem;
@@ -354,168 +651,109 @@
     background: rgba(74, 155, 127, 0.08);
 }
 
-.thoughtArea {
-    padding: 1rem 1.25rem;
+/* Preview Area */
+.cardPreview {
+    height: 140px;
     background: var(--bg-secondary);
-    flex: 1;
-}
-
-.thoughtText {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    line-height: 1.5;
-    margin: 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
     overflow: hidden;
-    line-clamp: 3;
+    position: relative;
 }
 
-.progressArea {
-    padding: 0.75rem 1.25rem;
-    background: var(--bg-card);
+.previewContent {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    transform: scale(0.5);
+    transform-origin: center center;
 }
 
-.progressTrack {
-    height: 4px;
+.previewContent>* {
+    max-width: 200%;
+    max-height: 200%;
+}
+
+.miniPreview {
+    width: 200%;
+    height: 200%;
+    border: none;
+    pointer-events: none;
+    background: white;
+}
+
+.previewPlaceholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: var(--text-faint);
+    font-size: 0.8rem;
+}
+
+.previewSpinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-subtle);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Card Progress */
+.cardProgress {
+    height: 3px;
     background: var(--bg-secondary);
-    border-radius: var(--radius-pill);
-    overflow: hidden;
 }
 
-.progressFill {
+.cardProgressFill {
     height: 100%;
     background: var(--accent-primary);
-    border-radius: var(--radius-pill);
     transition: width 0.4s var(--ease-smooth);
 }
 
-.resultArea {
-    padding: 0.75rem 1.25rem;
-    background: var(--accent-subtle);
-    display: flex;
-    gap: 1rem;
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-}
-
-/* Spin Animation */
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* ===== Activity Section in Sidebar ===== */
-.activitySection {
-    margin-top: auto;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border-subtle);
-}
-
-.activityText {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    line-height: 1.5;
-    margin: 0;
-}
-
-.emptyViewport {
-    color: var(--text-faint);
-    font-size: 0.9rem;
-}
-
-/* ===== Chat Area ===== */
-.chatArea {
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-md);
-    display: flex;
-    flex-direction: column;
-    max-height: 280px;
-}
-
-.messageList {
-    flex: 1;
-    overflow-y: auto;
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.message {
-    max-width: 85%;
-    padding: 0.75rem 1rem;
-    border-radius: var(--radius-md);
-    font-size: 0.9rem;
-    line-height: 1.5;
-}
-
-.message p {
-    margin: 0;
-}
-
-.userMessage {
-    align-self: flex-end;
-    background: var(--accent-primary);
-    color: white;
-    border-bottom-right-radius: 4px;
-}
-
-.agentMessage {
-    align-self: flex-start;
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-    border-bottom-left-radius: 4px;
-}
-
-.chatInputArea {
+/* Card Chat */
+.cardChat {
     display: flex;
     gap: 0.5rem;
     padding: 0.75rem 1rem;
+    background: var(--bg-card);
     border-top: 1px solid var(--border-subtle);
-    background: var(--bg-primary);
-    border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 
-.chatInput {
+.cardChatInput {
     flex: 1;
     border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-md);
-    padding: 0.6rem 0.875rem;
-    font-size: 0.9rem;
-    font-family: inherit;
-    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    background: var(--bg-primary);
     color: var(--text-primary);
-    resize: none;
     outline: none;
-    min-height: 40px;
     transition: border-color 0.2s;
 }
 
-.chatInput::placeholder {
-    color: var(--text-placeholder);
+.cardChatInput::placeholder {
+    color: var(--text-faint);
 }
 
-.chatInput:focus {
+.cardChatInput:focus {
     border-color: var(--border-hover);
 }
 
-.chatInput:disabled {
+.cardChatInput:disabled {
     background: var(--bg-secondary);
     color: var(--text-muted);
 }
 
-.sendButton {
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-md);
+.cardSendButton {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
     border: none;
     background: var(--accent-primary);
     color: white;
@@ -524,14 +762,41 @@
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
+    flex-shrink: 0;
 }
 
-.sendButton:hover:not(:disabled) {
+.cardSendButton:hover:not(:disabled) {
     background: var(--accent-hover);
 }
 
-.sendButton:disabled {
+.cardSendButton:disabled {
     background: var(--border-subtle);
     color: var(--text-faint);
     cursor: not-allowed;
+}
+
+/* Card Footer */
+.cardFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 1rem;
+    background: var(--bg-secondary);
+    font-size: 0.75rem;
+}
+
+.cardResults {
+    display: flex;
+    gap: 0.75rem;
+    color: var(--text-muted);
+}
+
+.expandHint {
+    color: var(--text-faint);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.agentCard:hover .expandHint {
+    opacity: 1;
 }

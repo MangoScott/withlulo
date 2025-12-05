@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import styles from './Dashboard.module.css';
 import { AgentState } from '@/hooks/useAgent';
+import LivePreview from './LivePreview';
+import DeployPanel from './DeployPanel';
 
 interface DashboardProps {
     agent: AgentState;
@@ -10,8 +12,9 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ agent, onBack }: DashboardProps) {
-    const { files, url, status, thought, browserContent, messages, sendMessage, isActive } = agent;
+    const { prompt, status, thought, messages, sendMessage, isActive, generatedCode, generatedFiles } = agent;
     const [input, setInput] = useState('');
+    const [showDeploy, setShowDeploy] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Auto-scroll to latest message
@@ -32,63 +35,71 @@ export default function Dashboard({ agent, onBack }: DashboardProps) {
         }
     };
 
+    const handleDeploy = (platform: string) => {
+        // Open the platform URL
+        if (platform === 'github') {
+            window.open('https://github.com/new', '_blank');
+        } else if (platform === 'vercel') {
+            window.open('https://vercel.com/new', '_blank');
+        }
+    };
+
+    const hasCode = generatedCode.html || generatedCode.css || generatedCode.js;
+
     return (
-        <div className={styles.dashboard}>
+        <div className={styles.simpleDashboard}>
             {/* Header */}
-            <header className={styles.header}>
+            <header className={styles.simpleHeader}>
                 <button onClick={onBack} className={styles.backButton}>
                     ← Back
                 </button>
-                <div className={styles.statusPill}>
-                    <span className={`${styles.statusDot} ${isActive ? styles.active : ''}`} />
-                    {status}
+                <div className={styles.headerInfo}>
+                    <span className={styles.taskName}>
+                        {prompt.slice(0, 50)}{prompt.length > 50 ? '...' : ''}
+                    </span>
+                    <div className={styles.statusPill}>
+                        <span className={`${styles.statusDot} ${isActive ? styles.active : ''}`} />
+                        {status}
+                    </div>
                 </div>
             </header>
 
-            {/* Sidebar - Files */}
-            <aside className={styles.sidebar}>
-                <div className={styles.sidebarTitle}>Files</div>
-                <div className={styles.fileTree}>
-                    {files.map((file, i) => (
-                        <div key={i} className={`${styles.file} ${file.isNew ? styles.new : ''}`}>
-                            {file.type === 'folder' ? '📁' : '📄'} {file.name}
-                        </div>
-                    ))}
-                </div>
-
-                {/* Current Activity */}
-                {thought && (
-                    <div className={styles.activitySection}>
-                        <div className={styles.sidebarTitle}>Current Activity</div>
-                        <p className={styles.activityText}>{thought}</p>
-                    </div>
-                )}
-            </aside>
-
             {/* Main Content */}
-            <main className={styles.main}>
-                {/* Browser Preview */}
-                <div className={styles.browserFrame}>
-                    <div className={styles.browserHeader}>
-                        <div className={styles.trafficLights}>
-                            <div style={{ background: '#FF5F56' }} />
-                            <div style={{ background: '#FFBD2E' }} />
-                            <div style={{ background: '#27C93F' }} />
-                        </div>
-                        <div className={styles.urlBar}>{url}</div>
-                    </div>
-                    <div className={styles.viewport}>
-                        {browserContent || (
-                            <div className={styles.emptyViewport}>
-                                Agent workspace
-                            </div>
+            <div className={styles.simpleContent}>
+                {/* Left: Live Preview */}
+                <div className={styles.previewSection}>
+                    <div className={styles.previewHeader}>
+                        <span>Live Preview</span>
+                        {hasCode && (
+                            <button
+                                className={styles.deployToggle}
+                                onClick={() => setShowDeploy(!showDeploy)}
+                            >
+                                🚀 Deploy
+                            </button>
                         )}
                     </div>
+                    <div className={styles.previewContainer}>
+                        <LivePreview
+                            html={generatedCode.html}
+                            css={generatedCode.css}
+                            js={generatedCode.js}
+                        />
+                    </div>
+
+                    {/* Current thought */}
+                    {isActive && thought && (
+                        <div className={styles.thoughtBanner}>
+                            <span className={styles.thoughtSpinner} />
+                            {thought}
+                        </div>
+                    )}
                 </div>
 
-                {/* Chat Area */}
-                <div className={styles.chatArea}>
-                    {/* Messages */}
+                {/* Right: Chat */}
+                <div className={styles.chatSection}>
+                    <div className={styles.chatHeader}>Chat</div>
+
                     <div className={styles.messageList}>
                         {messages.map((msg, i) => (
                             <div
@@ -101,13 +112,12 @@ export default function Dashboard({ agent, onBack }: DashboardProps) {
                         <div ref={messagesEndRef} />
                     </div>
 
-                    {/* Input */}
                     <div className={styles.chatInputArea}>
                         <textarea
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder={isActive ? "Agent is working..." : "Tell the agent what to do next..."}
+                            placeholder={isActive ? "Agent is working..." : "Ask for changes..."}
                             className={styles.chatInput}
                             disabled={isActive}
                             rows={1}
@@ -123,7 +133,26 @@ export default function Dashboard({ agent, onBack }: DashboardProps) {
                         </button>
                     </div>
                 </div>
-            </main>
+            </div>
+
+            {/* Deploy Panel */}
+            {showDeploy && hasCode && (
+                <div className={styles.deployOverlay}>
+                    <div className={styles.deployModal}>
+                        <button
+                            className={styles.closeButton}
+                            onClick={() => setShowDeploy(false)}
+                        >
+                            ✕
+                        </button>
+                        <DeployPanel
+                            projectName={prompt.slice(0, 30)}
+                            files={generatedFiles}
+                            onDeploy={handleDeploy}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
