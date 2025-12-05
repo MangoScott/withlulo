@@ -1,11 +1,11 @@
-/* Dashboard Detail View */
+/* Dashboard Detail View - Conversational Interface */
 .dashboard {
     display: grid;
-    grid-template-columns: 280px 1fr;
+    grid-template-columns: 260px 1fr;
     grid-template-rows: auto 1fr;
-    gap: 1.5rem;
+    gap: 1rem;
     height: 100vh;
-    padding: 1.5rem;
+    padding: 1rem;
     background: var(--bg-primary);
 }
 
@@ -14,30 +14,60 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 1.5rem;
+    padding: 0.75rem 1rem;
     background: var(--bg-card);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
 }
 
-.logo {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-primary);
+.backButton {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: color 0.2s var(--ease-smooth);
+    padding: 0.5rem;
+    transition: color 0.2s;
 }
 
-.logo:hover {
-    color: var(--accent-primary);
+.backButton:hover {
+    color: var(--text-primary);
 }
 
-.status {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
+.statusPill {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    padding: 0.4rem 0.75rem;
+    border-radius: var(--radius-pill);
+}
+
+.statusDot {
+    width: 6px;
+    height: 6px;
+    background: var(--text-faint);
+    border-radius: 50%;
+}
+
+.statusDot.active {
+    background: var(--accent-primary);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
 }
 
 .sidebar {
@@ -148,7 +178,7 @@
     position: absolute;
     width: 20px;
     height: 20px;
-    background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 3L10.07 19.97L12.58 12.58L19.97 10.07L3 3Z' fill='%23FF6B35' stroke='white' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 3L10.07 19.97L12.58 12.58L19.97 10.07L3 3Z' fill='%23D97757' stroke='white' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-size: contain;
     background-repeat: no-repeat;
     transition: all 0.4s var(--ease-smooth);
@@ -156,19 +186,7 @@
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
-@keyframes popIn {
-    from {
-        opacity: 0;
-        transform: translateY(4px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* ===== Agent Grid Styles ===== */
+/* ===== Agent Grid Layout ===== */
 .gridContainer {
     display: flex;
     flex-direction: column;
@@ -182,114 +200,81 @@
     padding: 1rem 2rem;
     background: var(--bg-card);
     border-bottom: 1px solid var(--border-subtle);
+    gap: 2rem;
 }
 
 .gridLogo {
     font-size: 1.5rem;
-    font-weight: 800;
+    font-weight: 500;
     color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
 }
 
-.logoIcon {
-    color: var(--accent-primary);
-}
-
-.inputRow {
+.addTaskRow {
     display: flex;
-    gap: 0.75rem;
     flex: 1;
     max-width: 480px;
-    margin-left: 3rem;
+    gap: 0.5rem;
 }
 
-.missionInput {
+.taskInput {
     flex: 1;
-    padding: 0.65rem 1.25rem;
+    padding: 0.6rem 1rem;
     border-radius: var(--radius-pill);
     border: 1px solid var(--border-subtle);
-    background: var(--bg-card);
+    background: var(--bg-primary);
     color: var(--text-primary);
     font-size: 0.9rem;
     transition: all 0.2s var(--ease-smooth);
 }
 
-.missionInput::placeholder {
-    color: var(--text-faint);
+.taskInput::placeholder {
+    color: var(--text-placeholder);
 }
 
-.missionInput:focus {
+.taskInput:focus {
     outline: none;
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 3px var(--accent-subtle);
+    border-color: var(--border-hover);
+    background: var(--bg-card);
 }
 
-.spawnButton {
-    padding: 0.65rem 1.5rem;
-    border-radius: var(--radius-pill);
-    border: none;
-    background: var(--accent-primary);
-    color: white;
-    font-size: 0.9rem;
-    font-weight: 600;
+.addButton {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-card);
+    color: var(--text-muted);
     cursor: pointer;
-    transition: all 0.2s var(--ease-smooth);
-    white-space: nowrap;
-}
-
-.spawnButton:hover:not(:disabled) {
-    background: var(--accent-hover);
-    transform: translateY(-1px);
-}
-
-.spawnButton:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.statusBadge {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: var(--accent-subtle);
-    border-radius: var(--radius-pill);
+    justify-content: center;
+    transition: all 0.2s var(--ease-smooth);
+}
+
+.addButton:hover:not(:disabled) {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.addButton:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.agentCount {
+    color: var(--text-muted);
     font-size: 0.85rem;
     font-weight: 500;
-    color: var(--accent-primary);
     margin-left: auto;
-}
-
-.statusDot {
-    width: 6px;
-    height: 6px;
-    background: var(--accent-primary);
-    border-radius: 50%;
-    animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.4;
-    }
 }
 
 .agentGrid {
     flex: 1;
     padding: 2rem;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
     overflow: auto;
     max-width: var(--max-width);
     margin: 0 auto;
@@ -298,15 +283,12 @@
 
 .emptyState {
     grid-column: 1 / -1;
-    text-align: center;
-    color: var(--text-muted);
-    padding: 6rem 2rem;
-}
-
-.emptyState h2 {
-    color: var(--text-primary);
-    font-weight: 700;
-    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-faint);
+    font-size: 0.95rem;
+    padding: 4rem;
 }
 
 .dashboardOverlay {
@@ -319,7 +301,7 @@
     background: var(--bg-primary);
 }
 
-/* ===== Agent Card Styles ===== */
+/* ===== Clean Agent Card ===== */
 .agentCard {
     background: var(--bg-card);
     border: 1px solid var(--border-subtle);
@@ -329,103 +311,227 @@
     transition: all 0.2s var(--ease-smooth);
     display: flex;
     flex-direction: column;
-    height: 300px;
 }
 
 .agentCard:hover {
-    transform: translateY(-4px);
     border-color: var(--border-hover);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-soft);
 }
 
 .cardHeader {
     padding: 1rem 1.25rem;
-    background: var(--bg-card);
-    border-bottom: 1px solid var(--border-subtle);
     display: flex;
     justify-content: space-between;
-    align-items: center;
-}
-
-.cardTitle {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: var(--text-primary);
-}
-
-.agentIcon {
-    font-size: 1rem;
-}
-
-.cardStatus {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: #22c55e;
-    padding: 0.25rem 0.6rem;
-    background: rgba(34, 197, 94, 0.08);
-    border-radius: var(--radius-pill);
-}
-
-.cardStatus.error {
-    color: #ef4444;
-    background: rgba(239, 68, 68, 0.08);
-}
-
-.cardStatus.complete {
-    color: var(--accent-primary);
-    background: var(--accent-subtle);
-}
-
-.statusIndicator {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: currentColor;
+    align-items: flex-start;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border-subtle);
 }
 
 .cardPrompt {
-    padding: 0.75rem 1.25rem;
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    background: var(--bg-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.4;
 }
 
-.cardPreview {
+.cardStatus {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--accent-primary);
+    background: var(--accent-subtle);
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-pill);
+    white-space: nowrap;
+}
+
+.cardStatus.error {
+    color: #C75C5C;
+    background: rgba(199, 92, 92, 0.08);
+}
+
+.cardStatus.complete {
+    color: #4A9B7F;
+    background: rgba(74, 155, 127, 0.08);
+}
+
+.thoughtArea {
+    padding: 1rem 1.25rem;
+    background: var(--bg-secondary);
     flex: 1;
-    position: relative;
-    background: var(--bg-secondary);
+}
+
+.thoughtText {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
     overflow: hidden;
+    line-clamp: 3;
 }
 
-.previewContent {
-    transform: scale(0.45);
-    transform-origin: top left;
-    width: 220%;
-    height: 220%;
-    pointer-events: none;
-    padding: 1rem;
-}
-
-.previewUrl {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 0.5rem 1rem;
+.progressArea {
+    padding: 0.75rem 1.25rem;
     background: var(--bg-card);
-    border-top: 1px solid var(--border-subtle);
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    white-space: nowrap;
+}
+
+.progressTrack {
+    height: 4px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-pill);
     overflow: hidden;
-    text-overflow: ellipsis;
+}
+
+.progressFill {
+    height: 100%;
+    background: var(--accent-primary);
+    border-radius: var(--radius-pill);
+    transition: width 0.4s var(--ease-smooth);
+}
+
+.resultArea {
+    padding: 0.75rem 1.25rem;
+    background: var(--accent-subtle);
+    display: flex;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* Spin Animation */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ===== Activity Section in Sidebar ===== */
+.activitySection {
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.activityText {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.emptyViewport {
+    color: var(--text-faint);
+    font-size: 0.9rem;
+}
+
+/* ===== Chat Area ===== */
+.chatArea {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    max-height: 280px;
+}
+
+.messageList {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.message {
+    max-width: 85%;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.message p {
+    margin: 0;
+}
+
+.userMessage {
+    align-self: flex-end;
+    background: var(--accent-primary);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.agentMessage {
+    align-self: flex-start;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-bottom-left-radius: 4px;
+}
+
+.chatInputArea {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--border-subtle);
+    background: var(--bg-primary);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.chatInput {
+    flex: 1;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 0.6rem 0.875rem;
+    font-size: 0.9rem;
+    font-family: inherit;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    resize: none;
+    outline: none;
+    min-height: 40px;
+    transition: border-color 0.2s;
+}
+
+.chatInput::placeholder {
+    color: var(--text-placeholder);
+}
+
+.chatInput:focus {
+    border-color: var(--border-hover);
+}
+
+.chatInput:disabled {
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+}
+
+.sendButton {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    border: none;
+    background: var(--accent-primary);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.sendButton:hover:not(:disabled) {
+    background: var(--accent-hover);
+}
+
+.sendButton:disabled {
+    background: var(--border-subtle);
+    color: var(--text-faint);
+    cursor: not-allowed;
 }

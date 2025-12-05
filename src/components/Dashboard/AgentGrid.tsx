@@ -32,35 +32,35 @@ export default function AgentGrid({ initialPrompt }: AgentGridProps) {
 
     return (
         <div className={styles.gridContainer}>
-            {/* Header */}
+            {/* Minimal Header */}
             <header className={styles.gridHeader}>
-                <div className={styles.gridLogo}>
-                    <span className={styles.logoIcon}>✦</span>
-                    Lulo
-                </div>
-                <div className={styles.inputRow}>
+                <div className={styles.gridLogo}>lulo</div>
+
+                <div className={styles.addTaskRow}>
                     <input
                         value={newPrompt}
                         onChange={(e) => setNewPrompt(e.target.value)}
                         placeholder="Add another task..."
-                        className={styles.missionInput}
+                        className={styles.taskInput}
                         onKeyDown={(e) => e.key === 'Enter' && addAgent()}
                     />
                     <button
                         onClick={addAgent}
                         disabled={!newPrompt}
-                        className={styles.spawnButton}
+                        className={styles.addButton}
                     >
-                        + Add Agent
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M12 5v14M5 12h14" />
+                        </svg>
                     </button>
                 </div>
-                <div className={styles.statusBadge}>
-                    <div className={styles.statusDot} />
-                    {agents.length} Agent{agents.length !== 1 ? 's' : ''} Active
+
+                <div className={styles.agentCount}>
+                    {agents.length} agent{agents.length !== 1 ? 's' : ''}
                 </div>
             </header>
 
-            {/* Agent Grid */}
+            {/* Clean Agent Grid */}
             <main className={styles.agentGrid}>
                 {agents.map(a => (
                     <AgentContainer
@@ -75,8 +75,7 @@ export default function AgentGrid({ initialPrompt }: AgentGridProps) {
 
                 {agents.length === 0 && (
                     <div className={styles.emptyState}>
-                        <h2>Mission Control Ready</h2>
-                        <p>Spawn your first agent to begin.</p>
+                        <p>Your agents will appear here</p>
                     </div>
                 )}
             </main>

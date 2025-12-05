@@ -7,41 +7,49 @@ interface AgentCardProps {
 }
 
 export default function AgentCard({ agent, onClick }: AgentCardProps) {
-    const { prompt, status, url, browserContent } = agent;
-    const isError = status.includes('Error');
-    const isComplete = status.includes('Completed');
+    const { prompt, status, thought, progress, isActive, hasError, result } = agent;
+
+    // Determine status color class
+    const statusClass = hasError ? styles.error : !isActive ? styles.complete : '';
 
     return (
-        <div
-            onClick={onClick}
-            className={styles.agentCard}
-        >
-            {/* Header */}
+        <div onClick={onClick} className={styles.agentCard}>
+            {/* Simple Header with Status */}
             <div className={styles.cardHeader}>
-                <div className={styles.cardTitle}>
-                    <span className={styles.agentIcon}>🤖</span>
-                    Agent {agent.id.slice(0, 4)}
-                </div>
-                <div className={`${styles.cardStatus} ${isError ? styles.error : isComplete ? styles.complete : ''}`}>
-                    <span className={styles.statusIndicator} />
+                <span className={styles.cardPrompt}>
+                    {prompt.length > 50 ? prompt.slice(0, 50) + '...' : prompt}
+                </span>
+                <span className={`${styles.cardStatus} ${statusClass}`}>
                     {status}
+                </span>
+            </div>
+
+            {/* What the agent is thinking */}
+            <div className={styles.thoughtArea}>
+                <p className={styles.thoughtText}>{thought}</p>
+            </div>
+
+            {/* Progress */}
+            <div className={styles.progressArea}>
+                <div className={styles.progressTrack}>
+                    <div
+                        className={styles.progressFill}
+                        style={{ width: `${progress}%` }}
+                    />
                 </div>
             </div>
 
-            {/* Prompt */}
-            <div className={styles.cardPrompt}>
-                {prompt}
-            </div>
-
-            {/* Browser Preview */}
-            <div className={styles.cardPreview}>
-                <div className={styles.previewContent}>
-                    {browserContent}
+            {/* Completion Summary */}
+            {result && (
+                <div className={styles.resultArea}>
+                    {result.filesCreated.length > 0 && (
+                        <span>{result.filesCreated.length} files</span>
+                    )}
+                    {result.sitesVisited.length > 0 && (
+                        <span>{result.sitesVisited.length} sites</span>
+                    )}
                 </div>
-                <div className={styles.previewUrl}>
-                    🔗 {url}
-                </div>
-            </div>
+            )}
         </div>
     );
 }

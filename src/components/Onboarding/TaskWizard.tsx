@@ -131,7 +131,7 @@ export default function TaskWizard({ onSubmit }: TaskWizardProps) {
                         onClick={handleSubmit}
                         disabled={!userInput.trim()}
                     >
-                        🚀 Launch AI Agent
+                        Launch Agent →
                     </button>
                 </div>
             )}
