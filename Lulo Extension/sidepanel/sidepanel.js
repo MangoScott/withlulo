@@ -145,3 +145,18 @@ chrome.runtime.onMessage.addListener((message) => {
         addMessage(`Clicked: ${message.element}`, 'action');
     }
 });
+
+// Load conversation history from popup
+chrome.storage.local.get(['conversationHistory'], (data) => {
+    if (data.conversationHistory && data.conversationHistory.length > 0) {
+        const welcome = chatContainer.querySelector('.welcome-message');
+        if (welcome) welcome.remove();
+
+        data.conversationHistory.forEach(msg => {
+            addMessage(msg.content, msg.role);
+        });
+
+        // Clear storage after loading (fresh start next time)
+        chrome.storage.local.remove('conversationHistory');
+    }
+});
