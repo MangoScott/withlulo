@@ -102,15 +102,6 @@ export default function DashboardPage() {
     // The user asked for "Folders".
     // For now, let's keep the main view as "All Recent Recordings".
 
-    if (loading) {
-        return (
-            <div className={styles.loading}>
-                <span className={styles.loadingIcon}>🎬</span>
-                <p>Loading recordings...</p>
-            </div>
-        );
-    }
-
     const [showOnboarding, setShowOnboarding] = useState(false);
 
     useEffect(() => {
@@ -123,6 +114,15 @@ export default function DashboardPage() {
     const greeting = (user?.user_metadata?.full_name && typeof user.user_metadata.full_name === 'string')
         ? user.user_metadata.full_name.split(' ')[0]
         : 'Lulo';
+
+    if (loading) {
+        return (
+            <div className={styles.loading}>
+                <span className={styles.loadingIcon}>🎬</span>
+                <p>Loading recordings...</p>
+            </div>
+        );
+    }
 
     return (
         <div className={styles.container}>
