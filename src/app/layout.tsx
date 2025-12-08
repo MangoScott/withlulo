@@ -21,6 +21,7 @@ export const metadata: Metadata = {
 import { getEnv } from "@/lib/env-server";
 
 export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
 
 export default function RootLayout({
   children,
