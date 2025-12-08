@@ -10,10 +10,10 @@ export async function withAuth(
     const user = await getUserFromToken(authHeader);
 
     if (!user) {
-        return NextResponse.json(
+        return withCors(NextResponse.json(
             { error: 'Unauthorized' },
             { status: 401 }
-        );
+        ));
     }
 
     return handler(request, user.id);
