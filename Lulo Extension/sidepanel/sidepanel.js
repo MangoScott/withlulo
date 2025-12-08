@@ -200,23 +200,20 @@ async function sendMessage() {
             title: tab.title
         });
 
-        removeThinking(thinkingId);
-
         if (response && response.error) {
             addMessage('Sorry, something went wrong. ' + response.error, 'assistant');
+        } else if (response) {
+            // Success
+            // Update local history
+            conversationHistory.push({ role: 'assistant', content: response });
+            saveState();
+
+            // SYNC TO CLOUD (Assistant)
+            // Stringify object for DB text column
+            syncMessageToCloud(JSON.stringify(response), 'assistant');
         }
 
-        // If success, the content was already streamed to 'aiMessageDiv'.
-        // We just need to ensure history state is updated IF we want local history sync.
-        // Actually, we might want to grab the final text from the div or wait for a 'done' event to update history.
-        // But for now, let's trust the UI updates.
-
-        // Update local history for persistence across reloads
-        // We can grab the final content from the DOM or wait for a specialized message.
-        // Let's rely on the 'stream-chunk' {done: true} to update the history array?
-
     } catch (error) {
-        removeThinking(thinkingId);
         addMessage('Error: ' + error.message, 'assistant');
     }
 }
@@ -313,7 +310,35 @@ chrome.storage.local.get(['conversationHistory'], (data) => {
 function addMessage(content, type) {
     const msg = document.createElement('div');
     msg.className = `message ${type}`;
-    msg.textContent = content;
+
+    // Handle structured content (Object or JSON String)
+    let isRichContent = false;
+
+    if (typeof content === 'object' && content !== null) {
+        if (content.steps) {
+            msg.innerHTML = formatSteps(content.steps);
+            isRichContent = true;
+        } else {
+            msg.textContent = JSON.stringify(content, null, 2);
+        }
+    } else if (typeof content === 'string') {
+        // Try parsing only if it looks like JSON starts with {
+        if (content.trim().startsWith('{')) {
+            try {
+                const data = JSON.parse(content);
+                if (data && data.steps) {
+                    msg.innerHTML = formatSteps(data.steps);
+                    isRichContent = true;
+                } else {
+                    msg.textContent = content; // Just text if not steps
+                }
+            } catch (e) {
+                msg.textContent = content;
+            }
+        } else {
+            msg.textContent = content;
+        }
+    }
 
     // Remove welcome message on first user message
     const welcome = chatContainer.querySelector('.welcome-message');
