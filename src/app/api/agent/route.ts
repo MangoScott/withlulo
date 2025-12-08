@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getUserFromToken, createServerClient } from '@/lib/supabase-server';
 import { getEnv } from '@/lib/env-server';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { Database } from '@/lib/supabase';
 
 export const runtime = 'edge';
 
@@ -49,7 +51,8 @@ export async function POST(req: Request) {
     }
 
     // Initialize Supabase for persistence
-    const supabase = createServerClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supabase = createServerClient() as any;
     let conversationId = reqConversationId;
     let userId = null;
 
@@ -65,6 +68,7 @@ export async function POST(req: Request) {
           .insert({
             user_id: userId,
             title: prompt.slice(0, 50) + '...',
+            project_id: null // Required by type
           })
           .select()
           .single();
@@ -107,9 +111,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid Token" }, { status: 401, headers: corsHeaders });
     }
 
+    // Use the explicitly optimized Flash model for speed
     const genAI = new GoogleGenerativeAI(apiKey);
-    // Using Gemini 3 Pro Preview (User Verified)
-    const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
     // Handle User Profile injection
     const userProfile = context?.userProfile;
