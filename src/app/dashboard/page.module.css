@@ -1,159 +1,204 @@
-/* Modal */
-.modalOverlay {
-    position: fixed;
+/* Dashboard Home - Animated Welcome */
+
+.loadingContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 500px;
+}
+
+.loadingWand {
+    font-size: 48px;
+    animation: float 1.5s ease-in-out infinite;
+}
+
+/* Welcome Container */
+.welcomeContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: calc(100vh - 100px);
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(180deg, #FAF8FC 0%, #F3ECFA 100%);
+}
+
+/* Sparkle Particles */
+.particles {
+    position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    backdrop-filter: blur(4px);
-    animation: fadeIn 0.2s ease-out;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    overflow: hidden;
 }
 
-.modal {
-    background: white;
-    border-radius: 16px;
-    padding: 32px;
-    width: 90%;
-    max-width: 500px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-    position: relative;
-    animation: slideUp 0.3s ease-out;
-}
-
-.modalClose {
+.particle {
     position: absolute;
-    top: 16px;
-    right: 16px;
-    background: none;
-    border: none;
-    font-size: 24px;
-    color: #999;
-    cursor: pointer;
-    line-height: 1;
-}
-
-.modalContent {
-    text-align: center;
-}
-
-.welcomeIcon {
-    font-size: 48px;
-    margin-bottom: 16px;
-    display: block;
-    animation: bounce 2s infinite;
-}
-
-.modalTitle {
-    font-size: 24px;
-    font-weight: 700;
-    color: #2D2B3A;
-    margin-bottom: 8px;
-}
-
-.modalText {
-    color: #7A7589;
-    margin-bottom: 24px;
-    line-height: 1.5;
-}
-
-.steps {
-    text-align: left;
-    background: #F5F3FA;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 24px;
-}
-
-.step {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 16px;
-    align-items: flex-start;
-}
-
-.step:last-child {
-    margin-bottom: 0;
-}
-
-.stepNumber {
-    background: #8B6DB8;
-    color: white;
-    width: 24px;
-    height: 24px;
+    width: 6px;
+    height: 6px;
+    background: radial-gradient(circle, #C9A8E9 0%, transparent 70%);
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    flex-shrink: 0;
-    font-weight: 600;
+    animation: sparkle 3s ease-in-out infinite;
 }
 
-.stepText {
-    font-size: 14px;
-    color: #4A4659;
-}
-
-.primaryBtn {
-    background: #2D2B3A;
-    color: white;
-    padding: 12px 24px;
-    border-radius: 8px;
-    border: none;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 15px;
-    transition: all 0.2s;
-    width: 100%;
-}
-
-.primaryBtn:hover {
-    background: #1a1a2e;
-    transform: translateY(-2px);
-}
-
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes bounce {
+@keyframes sparkle {
 
     0%,
-    20%,
-    50%,
-    80%,
     100% {
-        transform: translateY(0);
+        opacity: 0;
+        transform: scale(0) translateY(0);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1) translateY(-20px);
+    }
+}
+
+/* Wand Animation */
+.wandContainer {
+    position: relative;
+    margin-bottom: 40px;
+    animation: wandEntrance 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.wand {
+    font-size: 80px;
+    display: block;
+    filter: drop-shadow(0 4px 20px rgba(139, 109, 184, 0.4));
+    animation: wandFloat 3s ease-in-out infinite 1.5s;
+}
+
+.wandGlow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 120px;
+    height: 120px;
+    background: radial-gradient(circle, rgba(139, 109, 184, 0.3) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: glowPulse 2s ease-in-out infinite 1.5s;
+}
+
+@keyframes wandEntrance {
+    0% {
+        opacity: 0;
+        transform: translateX(-200px) translateY(-100px) rotate(-45deg) scale(0.5);
     }
 
     40% {
-        transform: translateY(-10px);
+        opacity: 1;
+        transform: translateX(50px) translateY(-30px) rotate(15deg) scale(1.2);
     }
 
-    60% {
-        transform: translateY(-5px);
+    70% {
+        transform: translateX(-20px) translateY(10px) rotate(-10deg) scale(1);
+    }
+
+    85% {
+        transform: translateX(10px) rotate(5deg) scale(1);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateX(0) translateY(0) rotate(0deg) scale(1);
+    }
+}
+
+@keyframes wandFloat {
+
+    0%,
+    100% {
+        transform: translateY(0) rotate(-3deg);
+    }
+
+    50% {
+        transform: translateY(-10px) rotate(3deg);
+    }
+}
+
+@keyframes glowPulse {
+
+    0%,
+    100% {
+        opacity: 0.5;
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: translate(-50%, -50%) scale(1.2);
+    }
+}
+
+/* Welcome Text */
+.welcomeText {
+    text-align: center;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.welcomeText.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.greeting {
+    font-size: 42px;
+    font-weight: 700;
+    color: #2D2B3A;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+}
+
+.name {
+    background: linear-gradient(135deg, #8B6DB8 0%, #C9A8E9 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.subtitle {
+    font-size: 22px;
+    color: #7A7589;
+    font-weight: 400;
+}
+
+/* Quick Actions */
+.quickActions {
+    margin-top: 48px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s;
+}
+
+.quickActions.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.hint {
+    font-size: 16px;
+    color: #9F94AD;
+    font-weight: 500;
+}
+
+/* Float animation for loading */
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0) rotate(-5deg);
+    }
+
+    50% {
+        transform: translateY(-15px) rotate(5deg);
     }
 }

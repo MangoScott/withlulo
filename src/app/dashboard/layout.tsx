@@ -70,7 +70,9 @@ export default function DashboardLayout({
     }
 
     const navItems = [
-        { href: '/dashboard', icon: '🎬', label: 'Recordings' },
+        { href: '/dashboard', icon: '🏠', label: 'Home' },
+        { href: '/dashboard/recordings', icon: '🎬', label: 'Recordings' },
+        { href: '/dashboard/sites', icon: '🌐', label: 'My Sites' },
         { href: '/dashboard/chats', icon: '💬', label: 'Chats' },
         { href: '/dashboard/projects', icon: '📁', label: 'Projects' },
         { href: '/dashboard/images', icon: '🖼️', label: 'Images' },
