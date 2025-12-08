@@ -13,9 +13,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(getEnv('GEMINI_API_KEY') || '');
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+// NOTE: genAI and model must be initialized inside request handlers,
+// not at module level, because getEnv() uses getRequestContext() which
+// is only available during request processing on Cloudflare Pages.
 
 // Helper to save message
 async function saveMessage(supabase: any, conversationId: string, role: string, content: string, images: string[] = []) {
