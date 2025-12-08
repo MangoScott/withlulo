@@ -774,7 +774,7 @@ async function callAPI(message) {
                 prompt: message.text,
                 context: message.context,
                 images: message.images,
-                conversationId: storedConvId // Send existing ID
+                conversationId: storedConvId
             })
         });
 
@@ -783,22 +783,6 @@ async function callAPI(message) {
             return { error: `Server Error: ${response.status}`, details: errText };
         }
 
-        const data = await response.json();
-
-        // Save new conversation ID if returned
-        if (data.conversationId && data.conversationId !== storedConvId) {
-            chrome.storage.sync.set({ conversationId: data.conversationId });
-        }
-
-        // The API returns { steps: [...] } format
-        // Convert steps to a readable response
-        if (data.steps && Array.isArray(data.steps)) {
-            const descriptions = data.steps
-                .map(step => step.description)
-                .filter(Boolean)
-                .join('\n\n');
-            return descriptions || 'Working on your request...';
-        }
 
         // Fallback for other response formats
         return data.response || data.message || JSON.stringify(data, null, 2);

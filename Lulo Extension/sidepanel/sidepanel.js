@@ -179,11 +179,17 @@ async function sendMessage() {
     taskInput.style.height = 'auto';
     submitBtn.disabled = true;
 
-    // Show thinking indicator
-    const thinkingId = addThinking();
+    // Reset streaming placeholder
+    aiMessageDiv = null;
 
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+        // The response will be streamed via 'stream-chunk' messages
+        // The await here will resolve when the stream closes or when the initial fetch is done?
+        // Actually, send_message (via runtime) waits for sendResponse? 
+        // Background script returns `return true` (async) or the final data.
+        // But since we stream, the FINAL return might be just metadata or completion.
 
         const response = await chrome.runtime.sendMessage({
             type: 'SEND_MESSAGE',
@@ -196,23 +202,19 @@ async function sendMessage() {
 
         removeThinking(thinkingId);
 
-        if (response.success) {
-            addMessage(response.reply, 'assistant');
-            conversationHistory.push({ role: 'assistant', content: response.reply });
-            saveState();
-
-            // SYNC TO CLOUD (Assistant)
-            syncMessageToCloud(response.reply, 'assistant');
-
-            // Handle any actions
-            if (response.actions) {
-                for (const action of response.actions) {
-                    addMessage(`🔧 ${action.description}`, 'action');
-                }
-            }
-        } else {
-            addMessage('Sorry, something went wrong. ' + (response.error || ''), 'assistant');
+        if (response && response.error) {
+            addMessage('Sorry, something went wrong. ' + response.error, 'assistant');
         }
+
+        // If success, the content was already streamed to 'aiMessageDiv'.
+        // We just need to ensure history state is updated IF we want local history sync.
+        // Actually, we might want to grab the final text from the div or wait for a 'done' event to update history.
+        // But for now, let's trust the UI updates.
+
+        // Update local history for persistence across reloads
+        // We can grab the final content from the DOM or wait for a specialized message.
+        // Let's rely on the 'stream-chunk' {done: true} to update the history array?
+
     } catch (error) {
         removeThinking(thinkingId);
         addMessage('Error: ' + error.message, 'assistant');
@@ -345,10 +347,77 @@ function removeThinking(id) {
     if (el) el.remove();
 }
 
+const conversationContainer = document.querySelector('.conversation-container');
+
+// ... inside sendMessage or wherever the request starts
+// We assume the initial user message is already added.
+
+// Create a placeholder for the AI response
+let aiMessageDiv = null;
+
+function handleStreamChunk(fullText, done) {
+    if (!aiMessageDiv) {
+        aiMessageDiv = document.createElement('div');
+        aiMessageDiv.className = 'message ai-message streaming';
+        conversationContainer.appendChild(aiMessageDiv);
+    }
+
+    // Partial Parsing Logic
+    // We look for logic inside the "THINK" blocks or the final steps
+    // Simple regex strategy for speed
+
+    let displayHtml = '';
+
+    // 1. Extract Thinking
+    const thinkMatch = fullText.match(/"action":\s*"THINK",\s*"description":\s*"([^"]*)/g);
+    if (thinkMatch) {
+        const lastThink = thinkMatch[thinkMatch.length - 1];
+        const thinkText = lastThink.match(/"description":\s*"([^"]*)/)[1];
+        displayHtml += `<div class="thinking-block">🤔 ${thinkText}...</div>`;
+    }
+
+    // 2. Extract Steps (Simple Check)
+    // If we see actions, we can infer checks.
+    // For now, let's just show the raw accumulated text if it's not JSON, 
+    // OR show a "Processing..." state if it IS JSON but not complete.
+
+    // Better UX: Show the Raw Text if it looks like a direct answer, OR specific UI for actions.
+    // Since the prompt enforces JSON, we are mostly seeing raw JSON stream.
+    // We want to hide the JSON and show the "Thinking" or "Description".
+
+    // If done, we parse properly.
+    if (done) {
+        aiMessageDiv.classList.remove('streaming');
+        try {
+            const data = JSON.parse(fullText);
+            aiMessageDiv.innerHTML = formatSteps(data.steps);
+        } catch (e) {
+            aiMessageDiv.textContent = fullText; // Fallback
+        }
+    } else {
+        // While streaming, just show the Thinking block + maybe raw length indicator
+        aiMessageDiv.innerHTML = displayHtml || `<div class="thinking-block">⚡ Thinking...</div>`;
+
+        // Auto-scroll
+        conversationContainer.scrollTop = conversationContainer.scrollHeight;
+    }
+}
+
+function formatSteps(steps) {
+    if (!steps) return '';
+    return steps.map(step => {
+        if (step.action === 'THINK') return `<div class="thinking-block">🤔 ${step.description}</div>`;
+        if (step.action === 'PREVIEW') return `<div class="preview-block">✨ ${step.description}</div>`;
+        return `<div class="step-block">✅ ${step.description || step.action}</div>`;
+    }).join('');
+}
+
 // Listen for messages from background
 chrome.runtime.onMessage.addListener((message) => {
     if (message.type === 'TASK_UPDATE') {
         addMessage(message.content, 'action');
+    } else if (message.type === 'stream-chunk') {
+        handleStreamChunk(message.content, message.done);
     } else if (message.type === 'ELEMENT_CLICKED') {
         addMessage(`Clicked: ${message.element}`, 'action');
     } else if (message.type === 'LULO_STEP_UPDATE') {
