@@ -8,6 +8,7 @@ import styles from './page.module.css';
 export default function ConnectPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [apiKey, setApiKey] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
     const [connected, setConnected] = useState(false);
@@ -18,30 +19,43 @@ export default function ConnectPage() {
     }, []);
 
     async function checkAuthAndLoadKey() {
-        const supabase = createBrowserClient();
-        const { data: { session } } = await supabase.auth.getSession();
+        try {
+            const supabase = createBrowserClient();
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-        if (!session) {
-            // Forward ext_id if present
+            if (sessionError) {
+                console.error('Session error:', sessionError);
+                setError(`Session error: ${sessionError.message}`);
+                setLoading(false);
+                return;
+            }
+
+            if (!session) {
+                // Forward ext_id if present
+                const params = new URLSearchParams(window.location.search);
+                const extId = params.get('ext_id');
+                const nextUrl = extId ? `/connect?ext_id=${encodeURIComponent(extId)}` : '/connect';
+                router.push(`/login?next=${encodeURIComponent(nextUrl)}`);
+                return;
+            }
+
+            // Use the session access token directly for extension auth
+            const token = session.access_token;
+            setApiKey(token);
+
+            // Attempt Magic Handshake with extension
             const params = new URLSearchParams(window.location.search);
             const extId = params.get('ext_id');
-            router.push(`/login?next=/connect${extId ? `&ext_id=${extId}` : ''}`);
-            return;
+            if (extId && token) {
+                attemptHandshake(extId, token);
+            }
+
+            setLoading(false);
+        } catch (err) {
+            console.error('Auth check failed:', err);
+            setError(`Auth error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+            setLoading(false);
         }
-
-        // Use the session access token directly for extension auth
-        // This is a valid JWT that can authenticate API requests
-        const token = session.access_token;
-        setApiKey(token);
-
-        // Attempt Magic Handshake with extension
-        const params = new URLSearchParams(window.location.search);
-        const extId = params.get('ext_id');
-        if (extId && token) {
-            attemptHandshake(extId, token);
-        }
-
-        setLoading(false);
     }
 
     async function generateKey(token: string) {
@@ -103,7 +117,17 @@ export default function ConnectPage() {
     if (loading) return (
         <div className={styles.container}>
             <div className={styles.card} style={{ textAlign: 'center', minHeight: '300px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                Loading...
+                {error ? (
+                    <>
+                        <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
+                        <p style={{ color: '#ef4444' }}>{error}</p>
+                        <button onClick={() => window.location.reload()} style={{ marginTop: '16px', padding: '8px 16px', cursor: 'pointer' }}>
+                            Try Again
+                        </button>
+                    </>
+                ) : (
+                    <>Loading...</>
+                )}
             </div>
         </div>
     );
