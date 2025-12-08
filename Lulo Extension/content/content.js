@@ -4,6 +4,46 @@ let highlightOverlay = null;
 let luloGlow = null;
 let luloCursor = null;
 
+// ==========================================
+// AUTO-AUTH: Detect and sync Supabase token
+// when user visits heylulo.com
+// ==========================================
+(function autoDetectAuth() {
+    // Only run on heylulo.com
+    if (!window.location.hostname.includes('heylulo.com') &&
+        !window.location.hostname.includes('localhost')) {
+        return;
+    }
+
+    // Wait for page to load, then check for Supabase session
+    setTimeout(async () => {
+        try {
+            // Look for Supabase auth in localStorage
+            const keys = Object.keys(localStorage);
+            const supabaseKey = keys.find(k => k.includes('supabase') && k.includes('auth'));
+
+            if (supabaseKey) {
+                const authData = JSON.parse(localStorage.getItem(supabaseKey) || '{}');
+                const accessToken = authData?.access_token || authData?.currentSession?.access_token;
+
+                if (accessToken && accessToken.length > 20) {
+                    // Sync token to extension storage
+                    chrome.storage.sync.get(['luloCloudToken'], (result) => {
+                        // Only update if different (avoid unnecessary writes)
+                        if (result.luloCloudToken !== accessToken) {
+                            chrome.storage.sync.set({ luloCloudToken: accessToken }, () => {
+                                console.log('[Lulo] Auto-synced auth token');
+                            });
+                        }
+                    });
+                }
+            }
+        } catch (e) {
+            console.log('[Lulo] Auto-auth check failed:', e);
+        }
+    }, 1000);
+})();
+
 // Create the Lulo glow border
 function createLuloGlow() {
     if (luloGlow) return;
