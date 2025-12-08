@@ -154,8 +154,8 @@ let browserClient: ReturnType<typeof createClient<Database>> | null = null;
 export function createBrowserClient() {
     if (browserClient) return browserClient;
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || (typeof window !== 'undefined' ? (window as any).__LULO_ENV?.NEXT_PUBLIC_SUPABASE_URL : '');
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || (typeof window !== 'undefined' ? (window as any).__LULO_ENV?.NEXT_PUBLIC_SUPABASE_ANON_KEY : '');
 
     if (!supabaseUrl || !supabaseAnonKey) {
         throw new Error('Missing Supabase environment variables');

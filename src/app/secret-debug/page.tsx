@@ -7,9 +7,10 @@ export default function DebugPage() {
 
     useEffect(() => {
         setEnvInfo({
-            NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ? '✅ Present' : '❌ Missing',
-            NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '✅ Present' : '❌ Missing',
+            NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ? '✅ Present (Process)' : (window as any).__LULO_ENV?.NEXT_PUBLIC_SUPABASE_URL ? '✅ Present (Runtime)' : '❌ Missing',
+            NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '✅ Present (Process)' : (window as any).__LULO_ENV?.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '✅ Present (Runtime)' : '❌ Missing',
             NODE_ENV: process.env.NODE_ENV,
+            HAS_RUNTIME_INJECTION: !!(window as any).__LULO_ENV,
         });
     }, []);
 
