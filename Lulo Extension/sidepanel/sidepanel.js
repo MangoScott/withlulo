@@ -250,7 +250,7 @@ async function syncMessageToCloud(content, role) {
         // Create Conversation if needed (Lazy Create)
         if (!conversationId) {
             console.log('Creating new cloud conversation...');
-            const res = await fetch('http://localhost:3000/api/conversations', {
+            const res = await fetch('https://heylulo.com/api/conversations', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -274,7 +274,7 @@ async function syncMessageToCloud(content, role) {
 
         if (conversationId) {
             // Append Message
-            await fetch(`http://localhost:3000/api/conversations/${conversationId}/messages`, {
+            await fetch(`https://heylulo.com/api/conversations/${conversationId}/messages`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1033,7 +1033,7 @@ function resetWizard() {
 
 // CONFIGURATION
 // CONFIGURATION
-// const WEB_URL = 'http://localhost:3000'; // Dev - uncomment for local development
+// const WEB_URL = 'https://heylulo.com'; // Prod
 const WEB_URL = 'https://heylulo.com'; // Prod
 
 // ==========================================
