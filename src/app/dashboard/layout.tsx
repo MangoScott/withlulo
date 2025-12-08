@@ -82,7 +82,7 @@ export default function DashboardLayout({
             <aside className={styles.sidebar}>
                 <div className={styles.logo}>
                     <span className={styles.logoIcon}>🪄</span>
-                    <span className={styles.logoText}>Hey Lulo</span>
+                    <span className={styles.logoText}>Lulo</span>
                 </div>
 
                 <nav className={styles.nav}>
