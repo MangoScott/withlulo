@@ -30,12 +30,21 @@ export default function ConnectPage() {
                 return;
             }
 
+            // Get ext_id from URL or localStorage (localStorage persists through OAuth)
+            const params = new URLSearchParams(window.location.search);
+            let extId = params.get('ext_id');
+
+            // If ext_id in URL, store it for later (survives OAuth redirect)
+            if (extId) {
+                localStorage.setItem('lulo_ext_id', extId);
+            } else {
+                // Try to recover from localStorage after OAuth redirect
+                extId = localStorage.getItem('lulo_ext_id');
+            }
+
             if (!session) {
-                // Forward ext_id if present
-                const params = new URLSearchParams(window.location.search);
-                const extId = params.get('ext_id');
-                const nextUrl = extId ? `/connect?ext_id=${encodeURIComponent(extId)}` : '/connect';
-                router.push(`/login?next=${encodeURIComponent(nextUrl)}`);
+                // Redirect to login - ext_id is already saved in localStorage
+                router.push('/login?next=/connect');
                 return;
             }
 
@@ -44,10 +53,10 @@ export default function ConnectPage() {
             setApiKey(token);
 
             // Attempt Magic Handshake with extension
-            const params = new URLSearchParams(window.location.search);
-            const extId = params.get('ext_id');
             if (extId && token) {
                 attemptHandshake(extId, token);
+                // Clean up localStorage after successful use
+                localStorage.removeItem('lulo_ext_id');
             }
 
             setLoading(false);
