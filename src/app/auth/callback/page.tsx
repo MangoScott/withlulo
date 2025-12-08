@@ -17,8 +17,27 @@ function CallbackContent() {
             if (code) {
                 // Exchange code for session
                 try {
-                    const { error } = await supabase.auth.exchangeCodeForSession(code);
+                    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
                     if (error) throw error;
+
+                    // Trigger server-side profile/project creation
+                    if (data?.session?.access_token) {
+                        try {
+                            await fetch('/api/auth/callback', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    access_token: data.session.access_token,
+                                    refresh_token: data.session.refresh_token
+                                })
+                            });
+                        } catch (e) {
+                            console.error('Failed to create profile:', e);
+                            // Continue anyway, dashboard might work partially or retry
+                        }
+                    }
 
                     // Redirect only after successful exchange
                     router.push(next);
