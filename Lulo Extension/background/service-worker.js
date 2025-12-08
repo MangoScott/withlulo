@@ -783,12 +783,18 @@ async function callAPI(message) {
             return { error: `Server Error: ${response.status}`, details: errText };
         }
 
+        const data = await response.json();
 
-        // Fallback for other response formats
-        return data.response || data.message || JSON.stringify(data, null, 2);
+        // Handle Conversational ID update
+        // The endpoint should now return conversationId in the body
+        if (data.conversationId && data.conversationId !== storedConvId) {
+            chrome.storage.sync.set({ conversationId: data.conversationId });
+        }
+
+        return data;
+
     } catch (error) {
-        console.error('API Error:', error);
-        throw error;
+        return { error: "Network Error", details: error.message };
     }
 }
 

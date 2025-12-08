@@ -179,17 +179,11 @@ async function sendMessage() {
     taskInput.style.height = 'auto';
     submitBtn.disabled = true;
 
-    // Reset streaming placeholder
-    aiMessageDiv = null;
+    // Show thinking indicator
+    const thinkingId = addThinking();
 
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-        // The response will be streamed via 'stream-chunk' messages
-        // The await here will resolve when the stream closes or when the initial fetch is done?
-        // Actually, send_message (via runtime) waits for sendResponse? 
-        // Background script returns `return true` (async) or the final data.
-        // But since we stream, the FINAL return might be just metadata or completion.
 
         const response = await chrome.runtime.sendMessage({
             type: 'SEND_MESSAGE',
@@ -200,20 +194,40 @@ async function sendMessage() {
             title: tab.title
         });
 
+        removeThinking(thinkingId);
+
         if (response && response.error) {
             addMessage('Sorry, something went wrong. ' + response.error, 'assistant');
         } else if (response) {
             // Success
-            // Update local history
-            conversationHistory.push({ role: 'assistant', content: response });
-            saveState();
 
-            // SYNC TO CLOUD (Assistant)
-            // Stringify object for DB text column
-            syncMessageToCloud(JSON.stringify(response), 'assistant');
+            // Format response steps
+            if (response.steps) {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'message assistant';
+                msgDiv.innerHTML = formatSteps(response.steps);
+                conversationContainer.appendChild(msgDiv);
+                conversationContainer.scrollTop = conversationContainer.scrollHeight;
+
+                // Keep history updated
+                conversationHistory.push({ role: 'assistant', content: response });
+                saveState();
+
+                // SYNC TO CLOUD
+                syncMessageToCloud(JSON.stringify(response), 'assistant');
+
+            } else {
+                // Fallback
+                const text = response.reply || JSON.stringify(response);
+                addMessage(text, 'assistant');
+                conversationHistory.push({ role: 'assistant', content: text });
+                saveState();
+                syncMessageToCloud(text, 'assistant');
+            }
         }
 
     } catch (error) {
+        removeThinking(thinkingId);
         addMessage('Error: ' + error.message, 'assistant');
     }
 }
@@ -392,30 +406,7 @@ function handleStreamChunk(fullText, done) {
         conversationContainer.appendChild(aiMessageDiv);
     }
 
-    // Partial Parsing Logic
-    // We look for logic inside the "THINK" blocks or the final steps
-    // Simple regex strategy for speed
-
-    let displayHtml = '';
-
-    // 1. Extract Thinking
-    const thinkMatch = fullText.match(/"action":\s*"THINK",\s*"description":\s*"([^"]*)/g);
-    if (thinkMatch) {
-        const lastThink = thinkMatch[thinkMatch.length - 1];
-        const thinkText = lastThink.match(/"description":\s*"([^"]*)/)[1];
-        displayHtml += `<div class="thinking-block">🤔 ${thinkText}...</div>`;
-    }
-
-    // 2. Extract Steps (Simple Check)
-    // If we see actions, we can infer checks.
-    // For now, let's just show the raw accumulated text if it's not JSON, 
-    // OR show a "Processing..." state if it IS JSON but not complete.
-
-    // Better UX: Show the Raw Text if it looks like a direct answer, OR specific UI for actions.
-    // Since the prompt enforces JSON, we are mostly seeing raw JSON stream.
-    // We want to hide the JSON and show the "Thinking" or "Description".
-
-    // If done, we parse properly.
+    // Simple loading state - no partial JSON parsing (looks cleaner)
     if (done) {
         aiMessageDiv.classList.remove('streaming');
         try {
@@ -425,8 +416,15 @@ function handleStreamChunk(fullText, done) {
             aiMessageDiv.textContent = fullText; // Fallback
         }
     } else {
-        // While streaming, just show the Thinking block + maybe raw length indicator
-        aiMessageDiv.innerHTML = displayHtml || `<div class="thinking-block">⚡ Thinking...</div>`;
+        // Clean loading state with animated dots
+        aiMessageDiv.innerHTML = `
+            <div class="thinking-block" style="display: flex; align-items: center; gap: 8px;">
+                <div class="thinking-dots" style="display: flex; gap: 4px;">
+                    <span></span><span></span><span></span>
+                </div>
+                <span>Thinking...</span>
+            </div>
+        `;
 
         // Auto-scroll
         conversationContainer.scrollTop = conversationContainer.scrollHeight;

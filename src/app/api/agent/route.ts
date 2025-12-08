@@ -321,70 +321,75 @@ IMPORTANT: You can ACTUALLY perform these actions - they will happen in the user
         { "action": "THINK", "description": "I'll create a modern landing page for a coffee shop with a hero section and menu preview.", "data": null },
         { "action": "PREVIEW", "description": "Generating landing page preview...", "data": { 
           "html": "<div class='hero'><h1>Bean & Brew</h1><p>Artisanal coffee for the soul</p><button>Order Now</button></div><div class='menu'><h2>Our Favorites</h2><ul><li>Latte - $4.50</li><li>Cappuccino - $4.00</li></ul></div>",
-          "css": ".hero { height: 400px; background: #2c241b; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; } button { background: #D97757; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin-top: 20px; }"
         } }
       ] }
 
 `;
 
-    // Generate Stream
-    const result = await model.generateContentStream({
+    // Generate Content (Non-Streaming)
+    const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: systemPrompt + `\nUser Request: ${prompt}` }] }],
       generationConfig: { responseMimeType: "application/json" }
     });
 
-    // Create a generic stream to send chunks to client
-    const encoder = new TextEncoder();
-    let fullResponseText = '';
+    const responseText = result.response.text();
+    let responseJson;
+    try {
+      responseJson = JSON.parse(responseText);
+    } catch (e) {
+      // If not JSON, wrap it
+      responseJson = { text: responseText };
+    }
 
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          // Send conversationId first as a custom header-like chunk or just prepended data?
-          // Easier: Just stream the content. We'll return conversationId in a final chunk or header?
-          // Actually, we can just return the raw JSON stream.
-          // The client needs the conversationId.
-          // Let's rely on the client finding the conversation ID from the persisted session 
-          // OR, much better: The backend updates the conversation if it exists.
-          // Let's prepend a metadata chunk? No, that breaks JSON parsing if we stream pure JSON.
-          // We will save to DB. The client doesn't strictly need the new ID *immediately* for the stream to show.
-          // But it needs it for the NEXT message.
-          // Let's send the conversation ID in a custom header: 'X-Conversation-Id'
+    // Save Assistant Message
+    if (conversationId && userId) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await saveMessage(supabase, conversationId, 'assistant', JSON.stringify(responseJson));
+    }
 
-          for await (const chunk of result.stream) {
-            const chunkText = chunk.text();
-            fullResponseText += chunkText;
-            controller.enqueue(encoder.encode(chunkText));
-          }
+    // --- INTERCEPTOR: GENERATE_GRAPHIC Handler ---
+    // If the model asks for a graphic, we handle it server-side and convert it to a PREVIEW
+    if (responseJson.steps) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      responseJson.steps.forEach((step: any, i: number) => {
+        if (step.action === 'GENERATE_GRAPHIC') {
+          const { prompt: imgPrompt, caption } = step.data;
 
-          // Persistence Block (After stream is done)
-          if (conversationId && userId) {
-            let responseJson;
-            try {
-              responseJson = JSON.parse(fullResponseText);
-            } catch (e) {
-              responseJson = { text: fullResponseText };
+          // Fallback Image Generation (Pollinations) - Robust & Fast
+          const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(imgPrompt)}?nologo=true`;
+
+          const html = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #f0f0f0; font-family: sans-serif; padding: 20px;">
+                        <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 500px; width: 100%;">
+                            <img src="${imageUrl}" style="width: 100%; border-radius: 8px; display: block; margin-bottom: 20px;" alt="Generated Graphic" />
+                            <div style="font-size: 16px; color: #333; line-height: 1.5; margin-bottom: 20px; border-left: 4px solid #739E82; padding-left: 12px;">
+                                ${caption}
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button onclick="window.open('https://twitter.com/intent/tweet?text=${encodeURIComponent(caption)}', '_blank')" style="flex: 1; padding: 10px; border: none; background: #1da1f2; color: white; border-radius: 6px; cursor: pointer; font-weight: bold;">Share to Twitter</button>
+                                <button onclick="window.open('https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(imageUrl)}', '_blank')" style="flex: 1; padding: 10px; border: none; background: #0a66c2; color: white; border-radius: 6px; cursor: pointer; font-weight: bold;">Share to LinkedIn</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+          // Replace the step with a generic PREVIEW step
+          responseJson.steps[i] = {
+            action: 'PREVIEW',
+            description: `Generated Graphic: ${caption}`,
+            data: {
+              html: html,
+              css: "",
+              js: ""
             }
-
-            // Save to DB
-            await saveMessage(supabase, conversationId, 'assistant', JSON.stringify(responseJson));
-          }
-
-          controller.close();
-        } catch (err) {
-          console.error('Streaming error:', err);
-          controller.error(err);
+          };
         }
-      }
-    });
+      });
+    }
+    // ---------------------------------------------
 
-    return new NextResponse(stream, {
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'text/plain; charset=utf-8',
-        'X-Conversation-Id': conversationId || ''
-      }
-    });
+    // Return response with conversationId
+    return NextResponse.json({ ...responseJson, conversationId }, { headers: corsHeaders });
 
   } catch (error: unknown) {
     console.error(error);
@@ -395,4 +400,3 @@ IMPORTANT: You can ACTUALLY perform these actions - they will happen in the user
     );
   }
 }
-

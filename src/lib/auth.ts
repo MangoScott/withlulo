@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient, getUserFromToken } from './supabase';
+import { createServerClient, getUserFromToken } from './supabase-server';
 
 // Auth middleware for API routes
 export async function withAuth(
