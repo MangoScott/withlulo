@@ -141,7 +141,11 @@ export function createServerClient() {
 }
 
 // Client-side client (for browser/dashboard)
+let browserClient: ReturnType<typeof createClient<Database>> | null = null;
+
 export function createBrowserClient() {
+    if (browserClient) return browserClient;
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -149,7 +153,8 @@ export function createBrowserClient() {
         throw new Error('Missing Supabase environment variables');
     }
 
-    return createClient<Database>(supabaseUrl, supabaseAnonKey);
+    browserClient = createClient<Database>(supabaseUrl, supabaseAnonKey);
+    return browserClient;
 }
 
 // Helper to get user from auth header (JWT or API Key)

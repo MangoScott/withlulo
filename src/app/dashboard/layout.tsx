@@ -36,7 +36,9 @@ export default function DashboardLayout({
                 setUser({
                     id: session.user.id,
                     email: session.user.email || '',
-                    display_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
+                    display_name: typeof session.user.user_metadata?.full_name === 'string'
+                        ? session.user.user_metadata.full_name
+                        : (session.user.email?.split('@')[0] || 'User'),
                     avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture
                 });
             } else {

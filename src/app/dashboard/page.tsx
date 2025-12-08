@@ -120,7 +120,9 @@ export default function DashboardPage() {
         }
     }, []);
 
-    const greeting = user?.user_metadata?.full_name ? user.user_metadata.full_name.split(' ')[0] : 'Lulo';
+    const greeting = (user?.user_metadata?.full_name && typeof user.user_metadata.full_name === 'string')
+        ? user.user_metadata.full_name.split(' ')[0]
+        : 'Lulo';
 
     return (
         <div className={styles.container}>
