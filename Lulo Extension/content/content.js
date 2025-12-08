@@ -19,12 +19,18 @@ let luloCursor = null;
     setTimeout(async () => {
         try {
             // Look for Supabase auth in localStorage
+            // Supabase v2 uses keys like: sb-{projectref}-auth-token
             const keys = Object.keys(localStorage);
-            const supabaseKey = keys.find(k => k.includes('supabase') && k.includes('auth'));
+            const supabaseKey = keys.find(k =>
+                k.startsWith('sb-') && k.includes('-auth-token')
+            );
 
             if (supabaseKey) {
                 const authData = JSON.parse(localStorage.getItem(supabaseKey) || '{}');
-                const accessToken = authData?.access_token || authData?.currentSession?.access_token;
+                // Supabase stores session in different structures depending on version
+                const accessToken = authData?.access_token ||
+                    authData?.session?.access_token ||
+                    authData?.currentSession?.access_token;
 
                 if (accessToken && accessToken.length > 20) {
                     // Sync token to extension storage
@@ -32,16 +38,22 @@ let luloCursor = null;
                         // Only update if different (avoid unnecessary writes)
                         if (result.luloCloudToken !== accessToken) {
                             chrome.storage.sync.set({ luloCloudToken: accessToken }, () => {
-                                console.log('[Lulo] Auto-synced auth token');
+                                console.log('[Lulo] ✅ Auto-synced auth token from Supabase');
                             });
+                        } else {
+                            console.log('[Lulo] Token already synced');
                         }
                     });
+                } else {
+                    console.log('[Lulo] No valid access token found in Supabase data');
                 }
+            } else {
+                console.log('[Lulo] No Supabase auth key found. Keys:', keys.filter(k => k.includes('sb-') || k.includes('supabase')));
             }
         } catch (e) {
             console.log('[Lulo] Auto-auth check failed:', e);
         }
-    }, 1000);
+    }, 1500);
 })();
 
 // Create the Lulo glow border
