@@ -318,6 +318,9 @@ function addMessage(content, type) {
         if (content.steps) {
             msg.innerHTML = formatSteps(content.steps);
             isRichContent = true;
+        } else if (content.reply) {
+            // Handle Legacy/Fallback Format
+            msg.textContent = content.reply;
         } else {
             msg.textContent = JSON.stringify(content, null, 2);
         }
@@ -329,8 +332,10 @@ function addMessage(content, type) {
                 if (data && data.steps) {
                     msg.innerHTML = formatSteps(data.steps);
                     isRichContent = true;
+                } else if (data && data.reply) {
+                    msg.textContent = data.reply;
                 } else {
-                    msg.textContent = content; // Just text if not steps
+                    msg.textContent = content; // Just text if not steps/reply
                 }
             } catch (e) {
                 msg.textContent = content;
