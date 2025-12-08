@@ -18,34 +18,13 @@ export const metadata: Metadata = {
   description: "Lulo helps you browse, record, and automate tasks.",
 };
 
-import { getEnv } from "@/lib/env-server";
-
-export const runtime = 'edge';
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Runtime injection of environment variables
-  // This ensures they are available even if missing at build time
-  const supabaseUrl = getEnv('NEXT_PUBLIC_SUPABASE_URL') || '';
-  const supabaseAnonKey = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY') || '';
-
   return (
     <html lang="en">
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.__LULO_ENV = {
-                NEXT_PUBLIC_SUPABASE_URL: "${supabaseUrl}",
-                NEXT_PUBLIC_SUPABASE_ANON_KEY: "${supabaseAnonKey}"
-              };
-            `,
-          }}
-        />
-      </head>
       <body className={`${dmSans.variable} ${inter.variable}`}>
         {children}
       </body>
