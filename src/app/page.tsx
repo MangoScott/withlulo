@@ -44,9 +44,17 @@ export default function Home() {
 
       {/* Showcase / Placeholder */}
       <section className={styles.showcase}>
-        <div className={styles.showcasePlaceholder}>
-          <span style={{ fontSize: '64px' }}>🎥</span>
-          <span>(Demo Video Placeholder)</span>
+        <div className={styles.showcasePlaceholder} style={{ padding: 0, overflow: 'hidden', background: 'transparent', border: 'none' }}>
+          <img
+            src="/demo.webp"
+            alt="Lulo Demo"
+            style={{
+              width: '100%',
+              height: 'auto',
+              borderRadius: '12px',
+              display: 'block'
+            }}
+          />
         </div>
       </section>
 
