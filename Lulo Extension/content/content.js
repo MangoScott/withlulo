@@ -1397,6 +1397,9 @@ async function saveRecording() {
             const title = `Recording - ${dateStr} ${timeStr}`;
 
             // Create recording entry in database
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+
             const response = await fetch('https://heylulo.com/api/recordings', {
                 method: 'POST',
                 headers: {
@@ -1410,8 +1413,10 @@ async function saveRecording() {
                     file_size_bytes: fileSizeBytes,
                     status: 'ready', // Mark as ready since we saved locally
                     is_public: false
-                })
+                }),
+                signal: controller.signal
             });
+            clearTimeout(timeoutId);
 
             if (response.ok) {
                 showNotification("Saved! Check Downloads folder & Dashboard 📁✨");

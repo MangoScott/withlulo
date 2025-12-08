@@ -1,5 +1,5 @@
 export const runtime = 'edge';
-import { createServerClient } from '@/lib/supabase';
+import { createServerClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
 
 export async function GET() {

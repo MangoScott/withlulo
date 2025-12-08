@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
+
 // Types for our database
 export interface Profile {
     id: string;
@@ -66,6 +67,23 @@ export interface Image {
     created_at: string;
 }
 
+export interface Site {
+    id: string;
+    user_id: string;
+    slug: string;
+    title: string;
+    description: string | null;
+    business_type: string | null;
+    theme: string;
+    html_content: string | null;
+    css_content: string | null;
+    published: boolean;
+    custom_domain: string | null;
+    view_count: number;
+    created_at: string;
+    updated_at: string;
+}
+
 // Database schema type
 export interface Database {
     public: {
@@ -119,26 +137,16 @@ export interface Database {
                 Insert: Omit<Image, 'id' | 'created_at'>;
                 Update: Partial<Omit<Image, 'id' | 'user_id' | 'created_at'>>;
             };
+            sites: {
+                Row: Site;
+                Insert: Omit<Site, 'id' | 'created_at' | 'updated_at' | 'view_count'>;
+                Update: Partial<Omit<Site, 'id' | 'user_id' | 'created_at'>>;
+            };
         };
     };
 }
 
-// Server-side client (for API routes)
-export function createServerClient() {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (!supabaseUrl || !supabaseServiceKey) {
-        throw new Error('Missing Supabase environment variables');
-    }
-
-    return createClient<Database>(supabaseUrl, supabaseServiceKey, {
-        auth: {
-            autoRefreshToken: false,
-            persistSession: false
-        }
-    });
-}
 
 // Client-side client (for browser/dashboard)
 let browserClient: ReturnType<typeof createClient<Database>> | null = null;
@@ -157,46 +165,4 @@ export function createBrowserClient() {
     return browserClient;
 }
 
-// Helper to get user from auth header (JWT or API Key)
-export async function getUserFromToken(authHeader: string | null) {
-    if (!authHeader?.startsWith('Bearer ')) {
-        return null;
-    }
 
-    const token = authHeader.substring(7);
-    const supabase = createServerClient();
-
-    // 1. Check if it's an API Key (lulo_ prefix)
-    if (token.startsWith('lulo_')) {
-        // First try API keys table
-        try {
-            const { data: keyData, error } = await supabase
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .from('api_keys' as any)
-                .select('user_id')
-                .eq('key_hash', token)
-                .single();
-
-            if (!error && keyData) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                return { id: keyData.user_id } as any;
-            }
-        } catch (e) {
-            // api_keys table might not exist, continue to JWT check
-        }
-
-        // If api_keys lookup failed, the token might be a pseudo-token
-        // derived from an access token (lulo_ + first 32 chars of JWT)
-        // We can't validate these without the full JWT, so return null
-        return null;
-    }
-
-    // 2. Standard JWT Check
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-
-    if (error || !user) {
-        return null;
-    }
-
-    return user;
-}

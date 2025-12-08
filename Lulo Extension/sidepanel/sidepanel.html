@@ -62,6 +62,7 @@
                 <h1 class="logo"><span class="logo-icon">🪄</span> Lulo</h1>
                 <div class="header-actions">
                     <button id="screenshotBtn" class="settings-btn" title="Take Screenshot">📷</button>
+                    <button id="sitesBtn" class="settings-btn" title="My Sites">🌐</button>
                     <button id="settingsBtn" class="settings-btn" title="Settings">⚙️</button>
                     <button id="projectsBtn" class="settings-btn" title="Projects">📁</button>
                     <button id="recordBtn" class="settings-btn record-btn" title="Record Screen">🎥</button>
@@ -83,6 +84,79 @@
                 <div class="projects-content">
                     <div id="projectsList" class="skills-list">
                         <!-- Projects injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sites Panel -->
+            <div id="sitesPanel" class="settings-panel sites-panel hidden">
+                <div class="settings-header">
+                    <h2>🌐 My Sites</h2>
+                    <button id="closeSites" class="close-btn">×</button>
+                </div>
+                <div class="sites-content">
+                    <!-- Sites List -->
+                    <div id="sitesList" class="sites-list">
+                        <div class="sites-empty">
+                            <span>🎨</span>
+                            <p>No sites yet</p>
+                        </div>
+                    </div>
+
+                    <!-- Create Site Button -->
+                    <button id="createSiteBtn" class="create-site-btn">
+                        ✨ Create New Site
+                    </button>
+                </div>
+
+                <!-- Site Creation Wizard (Hidden by default) -->
+                <div id="siteWizard" class="site-wizard hidden">
+                    <!-- Step 1: Business Type -->
+                    <div id="wizardStep1" class="wizard-step">
+                        <h3>What kind of site?</h3>
+                        <div class="type-grid">
+                            <button class="type-btn" data-type="coffee-shop">☕ Coffee Shop</button>
+                            <button class="type-btn" data-type="restaurant">🍽️ Restaurant</button>
+                            <button class="type-btn" data-type="portfolio">💼 Portfolio</button>
+                            <button class="type-btn" data-type="startup">🚀 Startup</button>
+                            <button class="type-btn" data-type="agency">🏢 Agency</button>
+                            <button class="type-btn" data-type="personal">👤 Personal</button>
+                            <button class="type-btn" data-type="ecommerce">🛍️ E-Commerce</button>
+                            <button class="type-btn" data-type="fitness">💪 Fitness</button>
+                            <button class="type-btn" data-type="real-estate">🏠 Real Estate</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Details -->
+                    <div id="wizardStep2" class="wizard-step hidden">
+                        <h3>Tell us about it</h3>
+                        <input type="text" id="siteTitle" placeholder="Site name (e.g., Bean & Brew)" />
+                        <textarea id="siteDescription" placeholder="Describe your business..." rows="3"></textarea>
+                        <div class="wizard-actions">
+                            <button id="wizardBack" class="secondary-btn">← Back</button>
+                            <button id="wizardGenerate" class="primary-btn">✨ Generate</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Generating -->
+                    <div id="wizardStep3" class="wizard-step hidden">
+                        <div class="generating">
+                            <div class="spinner"></div>
+                            <h3>Creating your site...</h3>
+                            <p id="generatingStatus">Generating beautiful design</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Preview -->
+                    <div id="wizardStep4" class="wizard-step hidden">
+                        <h3>🎉 Site Ready!</h3>
+                        <div id="sitePreviewContainer" class="site-preview-container">
+                            <iframe id="sitePreviewFrame"></iframe>
+                        </div>
+                        <div class="wizard-actions">
+                            <button id="wizardEdit" class="secondary-btn">Edit</button>
+                            <button id="wizardPublish" class="primary-btn">🚀 Publish</button>
+                        </div>
                     </div>
                 </div>
             </div>

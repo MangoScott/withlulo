@@ -1,6 +1,6 @@
 export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserFromToken } from '@/lib/supabase';
+import { getUserFromToken } from '@/lib/supabase-server';
 import { getUploadUrl, generateFileKey, getExtensionFromContentType } from '@/lib/r2';
 import { handleCors, withCors, withAuth } from '@/lib/auth';
 

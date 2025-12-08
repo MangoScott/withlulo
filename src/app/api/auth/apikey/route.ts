@@ -1,7 +1,7 @@
 export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth';
-import { createServerClient } from '@/lib/supabase';
+import { createServerClient } from '@/lib/supabase-server';
 import { nanoid } from 'nanoid';
 
 export const POST = async (request: NextRequest) => {

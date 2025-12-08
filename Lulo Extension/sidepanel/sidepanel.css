@@ -1156,3 +1156,237 @@ textarea:focus {
     font-weight: 600;
     cursor: pointer;
 }
+
+/* ===== SITES PANEL ===== */
+.sites-panel {
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.sites-content {
+    padding-top: 0;
+}
+
+.sites-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 12px;
+}
+
+.sites-empty {
+    text-align: center;
+    padding: 24px 16px;
+    color: var(--text-muted);
+}
+
+.sites-empty span {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.sites-empty p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.site-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+.site-item:hover {
+    background: var(--bg-card);
+    border-color: var(--accent-primary);
+    transform: translateX(4px);
+}
+
+.site-info {
+    flex: 1;
+}
+
+.site-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.site-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: capitalize;
+}
+
+.site-status {
+    font-size: 0.8rem;
+}
+
+.create-site-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--magic) 100%);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--duration-normal) var(--ease-bounce);
+    box-shadow: var(--shadow-md);
+}
+
+.create-site-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg), var(--shadow-glow);
+}
+
+/* ===== SITE WIZARD ===== */
+.site-wizard {
+    animation: wizardSlide 0.3s var(--ease-bounce);
+}
+
+@keyframes wizardSlide {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.wizard-step h3 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 14px 0;
+    text-align: center;
+}
+
+.type-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.type-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 8px;
+    background: var(--bg-primary);
+    border: 2px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+.type-btn:hover {
+    border-color: var(--accent-primary);
+    background: var(--accent-soft);
+    transform: translateY(-2px);
+}
+
+.type-btn.selected {
+    border-color: var(--accent-primary);
+    background: var(--accent-soft);
+    color: var(--accent-primary);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+/* Wizard Step 2 */
+#wizardStep2 input,
+#wizardStep2 textarea {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.wizard-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.wizard-actions .secondary-btn {
+    flex: 1;
+    padding: 10px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+.wizard-actions .secondary-btn:hover {
+    background: var(--bg-card);
+    border-color: var(--border-hover);
+}
+
+.wizard-actions .primary-btn {
+    flex: 2;
+    margin-top: 0;
+}
+
+/* Wizard Step 3 - Generating */
+.generating {
+    text-align: center;
+    padding: 30px 16px;
+}
+
+.generating .spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--accent-soft);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    animation: spin 1s linear infinite;
+}
+
+.generating h3 {
+    font-size: 1rem;
+    margin-bottom: 8px;
+}
+
+.generating p {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+/* Wizard Step 4 - Preview */
+.site-preview-container {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin-bottom: 12px;
+    height: 200px;
+}
+
+.site-preview-container iframe {
+    width: 200%;
+    height: 200%;
+    transform: scale(0.5);
+    transform-origin: top left;
+    border: none;
+    pointer-events: none;
+}

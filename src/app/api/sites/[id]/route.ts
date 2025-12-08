@@ -1,0 +1,113 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createServerClient, getUserFromToken } from '@/lib/supabase-server';
+
+export const runtime = 'edge';
+import { generateSite } from '@/lib/siteGenerator';
+
+interface RouteParams {
+    params: Promise<{ id: string }>;
+}
+
+// GET /api/sites/[id] - Get single site
+export async function GET(request: NextRequest, { params }: RouteParams) {
+    try {
+        const { id } = await params;
+        const user = await getUserFromToken(request.headers.get('authorization'));
+
+        const supabase = createServerClient();
+
+        // Try to get site - if user is authenticated, get their site; otherwise get public site
+        let query = supabase.from('sites').select('*').eq('id', id);
+
+        if (user) {
+            // User can get their own sites (published or not)
+            query = query.eq('user_id', user.id);
+        } else {
+            // Non-authenticated users can only see published sites
+            query = query.eq('published', true);
+        }
+
+        const { data: site, error } = await query.single();
+
+        if (error || !site) {
+            return NextResponse.json({ error: 'Site not found' }, { status: 404 });
+        }
+
+        return NextResponse.json({ site });
+    } catch (error) {
+        console.error('Site GET error:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+}
+
+// PATCH /api/sites/[id] - Update site
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
+    try {
+        const { id } = await params;
+        const user = await getUserFromToken(request.headers.get('authorization'));
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const body = await request.json();
+        const { title, description, published } = body;
+
+        const supabase = createServerClient();
+
+        // Build update object with only provided fields
+        const updates: Record<string, unknown> = {};
+        if (title !== undefined) updates.title = title;
+        if (description !== undefined) updates.description = description;
+        if (published !== undefined) updates.published = published;
+
+        const { data: site, error } = await supabase
+            .from('sites')
+            .update(updates)
+            .eq('id', id)
+            .eq('user_id', user.id)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error updating site:', error);
+            return NextResponse.json({ error: 'Failed to update site' }, { status: 500 });
+        }
+
+        if (!site) {
+            return NextResponse.json({ error: 'Site not found' }, { status: 404 });
+        }
+
+        return NextResponse.json({ site });
+    } catch (error) {
+        console.error('Site PATCH error:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+}
+
+// DELETE /api/sites/[id] - Delete site
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+    try {
+        const { id } = await params;
+        const user = await getUserFromToken(request.headers.get('authorization'));
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const supabase = createServerClient();
+        const { error } = await supabase
+            .from('sites')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', user.id);
+
+        if (error) {
+            console.error('Error deleting site:', error);
+            return NextResponse.json({ error: 'Failed to delete site' }, { status: 500 });
+        }
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error('Site DELETE error:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+}

@@ -42,9 +42,21 @@ submitBtn.addEventListener('click', sendMessage);
 actionChips.forEach(chip => {
     chip.addEventListener('click', async () => {
         const action = chip.dataset.action;
+
+        // Special handling for Build - open Sites panel
+        if (action === 'Build') {
+            const sitesPanel = document.getElementById('sitesPanel');
+            if (sitesPanel) {
+                sitesPanel.classList.remove('hidden');
+                // Trigger site creation
+                const createBtn = document.getElementById('createSiteBtn');
+                if (createBtn) createBtn.click();
+            }
+            return;
+        }
+
         const starters = {
             'Design': 'Create a social media graphic for ',
-            'Build': 'Create a landing page for ',
             'Schedule': 'Schedule a meeting with ',
             'Research': 'Research and find information about ',
             'Guide': 'Guide me through '
@@ -54,8 +66,6 @@ actionChips.forEach(chip => {
             taskInput.value = starters[action];
             taskInput.focus();
             submitBtn.disabled = false;
-        } else if (action === 'screenshot') {
-            // ... (keep existing logic if needed, but we removed the button from UI so this is dead code unless we keep it)
         }
     });
 });
@@ -671,6 +681,257 @@ if (screenshotBtn) {
 
 // Start
 initProjects();
+
+// ==========================================
+// SITES: Website Builder
+// ==========================================
+const sitesBtn = document.getElementById('sitesBtn');
+const sitesPanel = document.getElementById('sitesPanel');
+const closeSites = document.getElementById('closeSites');
+const sitesList = document.getElementById('sitesList');
+const createSiteBtn = document.getElementById('createSiteBtn');
+const siteWizard = document.getElementById('siteWizard');
+
+// Wizard Elements
+const wizardStep1 = document.getElementById('wizardStep1');
+const wizardStep2 = document.getElementById('wizardStep2');
+const wizardStep3 = document.getElementById('wizardStep3');
+const wizardStep4 = document.getElementById('wizardStep4');
+const wizardBack = document.getElementById('wizardBack');
+const wizardGenerate = document.getElementById('wizardGenerate');
+const wizardEdit = document.getElementById('wizardEdit');
+const wizardPublish = document.getElementById('wizardPublish');
+const siteTitleInput = document.getElementById('siteTitle');
+const siteDescriptionInput = document.getElementById('siteDescription');
+const sitePreviewFrame = document.getElementById('sitePreviewFrame');
+const generatingStatus = document.getElementById('generatingStatus');
+const typeButtons = document.querySelectorAll('.type-btn');
+
+// State
+let userSites = [];
+let selectedBusinessType = '';
+let currentGeneratedSite = null;
+
+// Open Sites Panel
+if (sitesBtn) {
+    sitesBtn.addEventListener('click', async () => {
+        sitesPanel.classList.remove('hidden');
+        await loadUserSites();
+    });
+}
+
+// Close Sites Panel
+if (closeSites) {
+    closeSites.addEventListener('click', () => {
+        sitesPanel.classList.add('hidden');
+        resetWizard();
+    });
+}
+
+// Load User Sites
+async function loadUserSites() {
+    const { luloCloudToken } = await chrome.storage.sync.get(['luloCloudToken']);
+    if (!luloCloudToken) {
+        sitesList.innerHTML = `
+            <div class="sites-empty">
+                <span>🔒</span>
+                <p>Sign in to manage sites</p>
+            </div>
+        `;
+        return;
+    }
+
+    try {
+        const response = await fetch(`${WEB_URL}/api/sites`, {
+            headers: { 'Authorization': `Bearer ${luloCloudToken}` }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            userSites = data.sites || [];
+            renderSitesList();
+        }
+    } catch (error) {
+        console.error('Failed to load sites:', error);
+    }
+}
+
+// Render Sites List
+function renderSitesList() {
+    if (userSites.length === 0) {
+        sitesList.innerHTML = `
+            <div class="sites-empty">
+                <span>🎨</span>
+                <p>No sites yet</p>
+            </div>
+        `;
+        return;
+    }
+
+    sitesList.innerHTML = userSites.map(site => `
+        <div class="site-item" data-id="${site.id}">
+            <div class="site-info">
+                <div class="site-name">${site.title}</div>
+                <div class="site-meta">${site.business_type?.replace('-', ' ') || 'Website'}</div>
+            </div>
+            <div class="site-status ${site.published ? 'published' : 'draft'}">
+                ${site.published ? '🟢' : '📝'}
+            </div>
+        </div>
+    `).join('');
+
+    // Add click handlers
+    document.querySelectorAll('.site-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const siteId = item.dataset.id;
+            // Open in dashboard
+            chrome.tabs.create({ url: `${WEB_URL}/dashboard/sites/${siteId}` });
+        });
+    });
+}
+
+// Create Site Button
+if (createSiteBtn) {
+    createSiteBtn.addEventListener('click', () => {
+        document.querySelector('.sites-content').classList.add('hidden');
+        siteWizard.classList.remove('hidden');
+        showWizardStep(1);
+    });
+}
+
+// Type Selection
+typeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        typeButtons.forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedBusinessType = btn.dataset.type;
+
+        // Move to step 2 after short delay
+        setTimeout(() => showWizardStep(2), 200);
+    });
+});
+
+// Wizard Navigation
+if (wizardBack) {
+    wizardBack.addEventListener('click', () => showWizardStep(1));
+}
+
+if (wizardGenerate) {
+    wizardGenerate.addEventListener('click', async () => {
+        const title = siteTitleInput.value.trim();
+        const description = siteDescriptionInput.value.trim();
+
+        if (!title || !description) {
+            siteTitleInput.style.borderColor = !title ? '#ef4444' : '';
+            siteDescriptionInput.style.borderColor = !description ? '#ef4444' : '';
+            return;
+        }
+
+        showWizardStep(3);
+        await generateSite(title, description);
+    });
+}
+
+if (wizardEdit) {
+    wizardEdit.addEventListener('click', () => {
+        if (currentGeneratedSite) {
+            chrome.tabs.create({ url: `${WEB_URL}/dashboard/sites/${currentGeneratedSite.id}` });
+        }
+    });
+}
+
+if (wizardPublish) {
+    wizardPublish.addEventListener('click', async () => {
+        if (!currentGeneratedSite) return;
+
+        const { luloCloudToken } = await chrome.storage.sync.get(['luloCloudToken']);
+        if (!luloCloudToken) return;
+
+        try {
+            await fetch(`${WEB_URL}/api/sites/${currentGeneratedSite.id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${luloCloudToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ published: true })
+            });
+
+            // Open the published site
+            chrome.tabs.create({ url: `${WEB_URL}/s/${currentGeneratedSite.slug}` });
+
+            // Reset and close
+            resetWizard();
+            sitesPanel.classList.add('hidden');
+        } catch (error) {
+            console.error('Failed to publish:', error);
+        }
+    });
+}
+
+// Show Wizard Step
+function showWizardStep(step) {
+    [wizardStep1, wizardStep2, wizardStep3, wizardStep4].forEach((el, i) => {
+        if (el) el.classList.toggle('hidden', i + 1 !== step);
+    });
+}
+
+// Generate Site
+async function generateSite(title, description) {
+    const { luloCloudToken } = await chrome.storage.sync.get(['luloCloudToken']);
+    if (!luloCloudToken) {
+        generatingStatus.textContent = 'Please sign in first';
+        return;
+    }
+
+    generatingStatus.textContent = 'Analyzing your description...';
+
+    try {
+        const response = await fetch(`${WEB_URL}/api/sites`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${luloCloudToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                title,
+                description,
+                businessType: selectedBusinessType
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Generation failed');
+        }
+
+        generatingStatus.textContent = 'Creating beautiful design...';
+        const data = await response.json();
+        currentGeneratedSite = data.site;
+
+        // Show preview
+        if (sitePreviewFrame && currentGeneratedSite.html_content) {
+            sitePreviewFrame.srcdoc = currentGeneratedSite.html_content;
+        }
+
+        showWizardStep(4);
+    } catch (error) {
+        console.error('Site generation failed:', error);
+        generatingStatus.textContent = 'Error: ' + error.message;
+    }
+}
+
+// Reset Wizard
+function resetWizard() {
+    document.querySelector('.sites-content')?.classList.remove('hidden');
+    siteWizard?.classList.add('hidden');
+    showWizardStep(1);
+    selectedBusinessType = '';
+    currentGeneratedSite = null;
+    if (siteTitleInput) siteTitleInput.value = '';
+    if (siteDescriptionInput) siteDescriptionInput.value = '';
+    typeButtons.forEach(b => b.classList.remove('selected'));
+}
 
 
 // CONFIGURATION

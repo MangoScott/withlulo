@@ -1,6 +1,6 @@
 export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase';
+import { createServerClient } from '@/lib/supabase-server';
 import { ensureProfile, handleCors, withCors } from '@/lib/auth';
 
 // POST /api/auth/callback - Handle OAuth callback

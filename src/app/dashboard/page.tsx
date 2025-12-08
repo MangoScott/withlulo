@@ -132,9 +132,14 @@ export default function DashboardPage() {
                         <h1 className={styles.title}>🪄 {greeting}</h1>
                         <p className={styles.subtitle}>Here's what you've created recently.</p>
                     </div>
-                    <Link href="/dashboard/projects" className={styles.projectLink}>
-                        Manage Projects ➔
-                    </Link>
+                    <div style={{ display: 'flex', gap: '16px' }}>
+                        <Link href="/dashboard/sites" className={styles.projectLink}>
+                            🌐 My Sites
+                        </Link>
+                        <Link href="/dashboard/projects" className={styles.projectLink}>
+                            Manage Projects ➔
+                        </Link>
+                    </div>
                 </div>
             </header>
 

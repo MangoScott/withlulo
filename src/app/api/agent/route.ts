@@ -1,15 +1,19 @@
-
-
+import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from "@google/generative-ai";
-export const runtime = 'edge';
+import { getUserFromToken } from '@/lib/supabase-server';
+import { getEnv } from '@/lib/env-server';
 
-import { NextResponse } from "next/server";
+export const runtime = 'edge';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
+
+// Initialize Gemini
+const genAI = new GoogleGenerativeAI(getEnv('GEMINI_API_KEY') || '');
+const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
 export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders });
@@ -20,7 +24,7 @@ export async function POST(req: Request) {
     const { prompt, context, images } = await req.json();
     const authHeader = req.headers.get('Authorization');
     const token = authHeader?.replace('Bearer ', '');
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = getEnv('GEMINI_API_KEY');
 
     if (!apiKey) {
       return NextResponse.json(
@@ -68,13 +72,13 @@ export async function POST(req: Request) {
     let userContextString = "";
     if (userProfile) {
       userContextString = `
-      USER PROFILE (MEMORY):
-      - Role: ${userProfile.role || 'Unknown'}
-      - Brand Vibe: ${userProfile.brand || 'None'}
-      - Custom Instructions: ${userProfile.instructions || 'None'}
-      
-      INSTRUCTION: You must adapt your persona, writing style, and especially your DESIGNS to match this profile.
-      If the user has a Brand Vibe, prioritize those colors/styles over others.
+      USER PROFILE(MEMORY):
+- Role: ${userProfile.role || 'Unknown'}
+- Brand Vibe: ${userProfile.brand || 'None'}
+- Custom Instructions: ${userProfile.instructions || 'None'}
+
+INSTRUCTION: You must adapt your persona, writing style, and especially your DESIGNS to match this profile.
+      If the user has a Brand Vibe, prioritize those colors / styles over others.
         `;
     }
 
@@ -83,38 +87,38 @@ export async function POST(req: Request) {
     let pageContextString = "";
     if (pageContent) {
       pageContextString = `
-      CURRENT PAGE CONTEXT (Pre-read):
+      CURRENT PAGE CONTEXT(Pre - read):
       ${pageContent}
-      
-      NOTE: You already know what is on the page. If the user asks for a summary or what the page is about, USE THIS CONTEXT immediately. Do not browse again unless asked.
+
+NOTE: You already know what is on the page.If the user asks for a summary or what the page is about, USE THIS CONTEXT immediately.Do not browse again unless asked.
         `;
     }
 
     const systemPrompt = `
       You are Lulo, a helpful AI assistant that can browse the web and automate tasks.
       You are running as a Chrome extension with real browser control powers.
-      ${userContextString}
+  ${userContextString}
       ${pageContextString}
-      
-      IMPORTANT: You can ACTUALLY perform these actions - they will happen in the user's browser!
+
+IMPORTANT: You can ACTUALLY perform these actions - they will happen in the user's browser!
       
       Available actions:
-      - THINK: Explain what you're doing (no browser action)
-      - BROWSE: Open a URL in a new tab { url: string }
-      - NAVIGATE: Navigate current tab { url: string }
-      - CLICK: Click element { selector: string } (text or CSS selector)
-      - TYPE: Type into field { text: string, selector?: string }
-      - EMAIL: Open Gmail compose { to?: string, subject?: string, body?: string }
-      - SEARCH: Search Google { query: string }
-      - CALENDAR: Schedule Google Calendar event { title: string, start: string, end: string, details?: string, location?: string } (Format dates as YYYYMMDDTHHMMSSZ or YYYYMMDD)
-      - EXTRACT: Scrape/Extract data from the page { selector: string, format: 'json' | 'csv', filename?: string } (Use 'img' to get images).
-      - LOOK: Take a visual snapshot of the page for design analysis (Returns image data).
+- THINK: Explain what you're doing (no browser action)
+  - BROWSE: Open a URL in a new tab { url: string }
+- NAVIGATE: Navigate current tab { url: string }
+- CLICK: Click element { selector: string } (text or CSS selector)
+- TYPE: Type into field { text: string, selector ?: string }
+- EMAIL: Open Gmail compose { to ?: string, subject ?: string, body ?: string }
+- SEARCH: Search Google { query: string }
+- CALENDAR: Schedule Google Calendar event { title: string, start: string, end: string, details ?: string, location ?: string } (Format dates as YYYYMMDDTHHMMSSZ or YYYYMMDD)
+- EXTRACT: Scrape / Extract data from the page { selector: string, format: 'json' | 'csv', filename ?: string } (Use 'img' to get images).
+- LOOK: Take a visual snapshot of the page for design analysis(Returns image data).
       - WRITE_FILE: Save code or data to the user's local disk { filename: string, content: string }.
-      - GENERATE_GRAPHIC: Create a BRAND NEW AI image { prompt: string, caption: string }. DO NOT use this if the user provided an image.
-      - PREVIEW: Show a live preview of HTML/CSS/JS { html: string, css?: string, js?: string }. Supports {{USER_IMAGE}} placeholder.
+  - GENERATE_GRAPHIC: Create a BRAND NEW AI image { prompt: string, caption: string }. DO NOT use this if the user provided an image.
+      - PREVIEW: Show a live preview of HTML / CSS / JS { html: string, css ?: string, js ?: string }. Supports { { USER_IMAGE } } placeholder.
       
       IMPORTANT PROTOCOLS:
-      1. **User Images**: If the user attaches an image (via Drag & Drop), you MUST use it in your design.
+1. ** User Images **: If the user attaches an image(via Drag & Drop), you MUST use it in your design.
          - Do NOT generate a new image.
          - In your PREVIEW HTML, use \`src="{{USER_IMAGE}}"\` (or \`{{USER_IMAGE_0}}\`, \`{{USER_IMAGE_1}}\` etc).
          - Example: \`<img src="{{USER_IMAGE}}" class="hero-img" />\`

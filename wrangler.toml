@@ -4,4 +4,4 @@ compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".vercel/output/static"
 
 [vars]
-# GEMINI_API_KEY will be set in the dashboard
+# Environment variables are managed as secrets in the Cloudflare dashboard

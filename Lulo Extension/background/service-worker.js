@@ -33,7 +33,7 @@ async function handleMessage(message, sender) {
         case 'START_TASK':
             return await startTask(message);
         case 'SEND_MESSAGE':
-            return await sendMessage(message);
+            return await sendMessage(message, sender);
         case 'SCREENSHOT':
             return await takeScreenshot();
         case 'EXTRACT_TEXT':
@@ -59,7 +59,7 @@ async function startTask(data) {
     }
 }
 
-async function sendMessage(data) {
+async function sendMessage(data, sender) {
     try {
         // Start the glow effect
         try {

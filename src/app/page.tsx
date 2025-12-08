@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import styles from './page.module.css';
+import DemoAnimation from '@/components/Landing/DemoAnimation';
 
 export default function Home() {
   return (
@@ -44,17 +45,8 @@ export default function Home() {
 
       {/* Showcase / Placeholder */}
       <section className={styles.showcase}>
-        <div className={styles.showcasePlaceholder} style={{ padding: 0, overflow: 'hidden', background: 'transparent', border: 'none' }}>
-          <img
-            src="/demo.webp"
-            alt="Lulo Demo"
-            style={{
-              width: '100%',
-              height: 'auto',
-              borderRadius: '12px',
-              display: 'block'
-            }}
-          />
+        <div className={styles.showcasePlaceholder}>
+          <DemoAnimation />
         </div>
       </section>
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth';
-import { createServerClient } from '@/lib/supabase';
+import { createServerClient } from '@/lib/supabase-server';
 import { generateFileKey, getUploadUrl, getPublicUrl, deleteFile } from '@/lib/r2';
 import { nanoid } from 'nanoid';
 

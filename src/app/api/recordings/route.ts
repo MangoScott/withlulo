@@ -1,6 +1,6 @@
 export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient, getUserFromToken } from '@/lib/supabase';
+import { createServerClient, getUserFromToken } from '@/lib/supabase-server';
 import { handleCors, withCors, withAuth } from '@/lib/auth';
 
 // GET /api/recordings - List user's recordings
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
                     webm_key: webm_key || null,
                     file_size_bytes: file_size_bytes || null,
                     duration_seconds: duration_seconds || null,
-                    status: webm_key ? 'processing' : 'ready',
+                    status: (webm_key && webm_key !== 'null') ? 'processing' : (body.status || 'ready'),
                     is_public: false
                 })
                 .select()
