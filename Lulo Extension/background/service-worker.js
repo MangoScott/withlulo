@@ -759,30 +759,36 @@ function waitForTabLoad(tabId) {
     });
 }
 
-async function callAPI(prompt, context = {}) {
+async function callAPI(message) {
     try {
-        const { luloCloudToken } = await chrome.storage.sync.get('luloCloudToken');
+        // Get conversation ID from storage
+        const { luloCloudToken, conversationId: storedConvId } = await chrome.storage.sync.get(['luloCloudToken', 'conversationId']);
+
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${luloCloudToken}`
+                'Authorization': `Bearer ${luloCloudToken || ''}`
             },
             body: JSON.stringify({
-                prompt: prompt,
-                context: {
-                    currentUrl: context.url,
-                    pageTitle: context.title,
-                    isExtension: true
-                }
+                prompt: message.text,
+                context: message.context,
+                images: message.images,
+                conversationId: storedConvId // Send existing ID
             })
         });
 
         if (!response.ok) {
-            throw new Error('API request failed');
+            const errText = await response.text();
+            return { error: `Server Error: ${response.status}`, details: errText };
         }
 
         const data = await response.json();
+
+        // Save new conversation ID if returned
+        if (data.conversationId && data.conversationId !== storedConvId) {
+            chrome.storage.sync.set({ conversationId: data.conversationId });
+        }
 
         // The API returns { steps: [...] } format
         // Convert steps to a readable response

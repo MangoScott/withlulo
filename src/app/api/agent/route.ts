@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { getUserFromToken } from '@/lib/supabase-server';
+import { getUserFromToken, createServerClient } from '@/lib/supabase-server';
 import { getEnv } from '@/lib/env-server';
 
 export const runtime = 'edge';
@@ -15,13 +15,28 @@ const corsHeaders = {
 const genAI = new GoogleGenerativeAI(getEnv('GEMINI_API_KEY') || '');
 const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
+// Helper to save message
+async function saveMessage(supabase: any, conversationId: string, role: string, content: string, images: string[] = []) {
+  try {
+    await supabase.from('messages').insert({
+      conversation_id: conversationId,
+      role,
+      content,
+      images: images && images.length > 0 ? images : null
+    });
+  } catch (e) {
+    console.error('Failed to save message:', e);
+  }
+}
+
 export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders });
 }
 
 export async function POST(req: Request) {
   try {
-    const { prompt, context, images } = await req.json();
+    const body = await req.json();
+    const { prompt, context, images, conversationId: reqConversationId } = body;
     const authHeader = req.headers.get('Authorization');
     const token = authHeader?.replace('Bearer ', '');
     const apiKey = getEnv('GEMINI_API_KEY');
@@ -31,6 +46,35 @@ export async function POST(req: Request) {
         { error: "Server API Key is missing" },
         { status: 500, headers: corsHeaders }
       );
+    }
+
+    // Initialize Supabase for persistence
+    const supabase = createServerClient();
+    let conversationId = reqConversationId;
+    let userId = null;
+
+    // Get User ID from token/session
+    if (token) {
+      const { data: { user } } = await supabase.auth.getUser(token);
+      if (user) userId = user.id;
+
+      // If we have a user but no conversation ID, create one
+      if (userId && !conversationId) {
+        const { data: conv } = await supabase
+          .from('conversations')
+          .insert({
+            user_id: userId,
+            title: prompt.slice(0, 50) + '...',
+          })
+          .select()
+          .single();
+        if (conv) conversationId = conv.id;
+      }
+    }
+
+    // Save User Message
+    if (conversationId && userId) {
+      await saveMessage(supabase, conversationId, 'user', prompt, images);
     }
 
     // AUTH CHECK
@@ -285,7 +329,18 @@ IMPORTANT: You can ACTUALLY perform these actions - they will happen in the user
     });
 
     const responseText = result.response.text();
-    let responseJson = JSON.parse(responseText);
+    let responseJson;
+    try {
+      responseJson = JSON.parse(responseText);
+    } catch (e) {
+      // If not JSON, wrap it
+      responseJson = { text: responseText };
+    }
+
+    // Save Assistant Message
+    if (conversationId && userId) {
+      await saveMessage(supabase, conversationId, 'assistant', JSON.stringify(responseJson));
+    }
 
     // --- INTERCEPTOR: GENERATE_GRAPHIC Handler ---
     // If the model asks for a graphic, we handle it server-side and convert it to a PREVIEW
@@ -331,7 +386,8 @@ IMPORTANT: You can ACTUALLY perform these actions - they will happen in the user
     }
     // ---------------------------------------------
 
-    return NextResponse.json(responseJson, { headers: corsHeaders });
+    // Return response with conversationId
+    return NextResponse.json({ ...responseJson, conversationId }, { headers: corsHeaders });
 
   } catch (error: unknown) {
     console.error(error);

@@ -23,6 +23,21 @@ export default function ChatsPage() {
         setLoading(false);
     }
 
+    async function deleteChat(e: React.MouseEvent, id: string) {
+        e.preventDefault(); // Prevent navigation
+        if (!confirm('Are you sure you want to delete this conversation?')) return;
+
+        setConversations(prev => prev.filter(c => c.id !== id)); // Optimistic update
+
+        try {
+            const supabase = createBrowserClient();
+            await supabase.from('conversations').delete().eq('id', id);
+        } catch (error) {
+            console.error('Failed to delete', error);
+            loadChats(); // Revert on error
+        }
+    }
+
     if (loading) return <div className={styles.loading}>Loading chats...</div>;
 
     return (
@@ -41,16 +56,25 @@ export default function ChatsPage() {
                     </div>
                 ) : (
                     conversations.map(chat => (
-                        <a href={`/dashboard/chats/${chat.id}`} key={chat.id} className={styles.card}>
-                            <div className={styles.icon}>💬</div>
-                            <div className={styles.info}>
-                                <h3>{chat.title || 'Untitled Conversation'}</h3>
-                                <span className={styles.date}>
-                                    {new Date(chat.updated_at).toLocaleDateString()}
-                                </span>
-                            </div>
-                            <div className={styles.arrow}>→</div>
-                        </a>
+                        <div key={chat.id} className={styles.cardWrapper}>
+                            <a href={`/dashboard/chats/${chat.id}`} className={styles.card}>
+                                <div className={styles.icon}>💬</div>
+                                <div className={styles.info}>
+                                    <h3>{chat.title || 'Untitled Conversation'}</h3>
+                                    <span className={styles.date}>
+                                        {new Date(chat.updated_at).toLocaleDateString()}
+                                    </span>
+                                </div>
+                                <div className={styles.arrow}>→</div>
+                            </a>
+                            <button
+                                className={styles.deleteBtn}
+                                onClick={(e) => deleteChat(e, chat.id)}
+                                title="Delete Conversation"
+                            >
+                                🗑️
+                            </button>
+                        </div>
                     ))
                 )}
             </div>
