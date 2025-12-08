@@ -2,20 +2,28 @@
     "manifest_version": 3,
     "name": "Lulo - AI Assistant",
     "version": "1.0.0",
-    "description": "Your AI team, working in parallel. Browser automation and task assistance.",
+    "description": "Superpowers for normal people. Your AI team for browser automation.",
     "permissions": [
         "activeTab",
         "sidePanel",
         "storage",
         "tabs",
-        "scripting"
+        "scripting",
+        "contextMenus"
     ],
     "host_permissions": [
-        "https://*.withlulo.com/*",
+        "https://*.heylulo.com/*",
+        "https://heylulo.com/*",
         "<all_urls>"
     ],
+    "externally_connectable": {
+        "matches": [
+            "http://localhost:3000/*",
+            "https://*.heylulo.com/*",
+            "https://heylulo.com/*"
+        ]
+    },
     "action": {
-        "default_popup": "popup/popup.html",
         "default_icon": {
             "16": "icons/icon16.png",
             "48": "icons/icon48.png",
@@ -24,6 +32,15 @@
     },
     "side_panel": {
         "default_path": "sidepanel/sidepanel.html"
+    },
+    "commands": {
+        "_execute_side_panel": {
+            "suggested_key": {
+                "default": "Ctrl+Shift+L",
+                "mac": "Command+Shift+L"
+            },
+            "description": "Open Lulo Side Panel"
+        }
     },
     "background": {
         "service_worker": "background/service-worker.js"

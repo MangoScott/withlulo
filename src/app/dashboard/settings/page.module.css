@@ -1,0 +1,193 @@
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding-bottom: 40px;
+}
+
+.header {
+    margin-bottom: 32px;
+}
+
+.title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #2D2B3A;
+    margin: 0 0 8px 0;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.subtitle {
+    color: #7A7589;
+    font-size: 15px;
+    margin: 0;
+}
+
+.section {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #E8E4F0;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.sectionHeader {
+    margin-bottom: 24px;
+}
+
+.sectionTitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2D2B3A;
+    margin: 0 0 4px 0;
+}
+
+.sectionDesc {
+    color: #7A7589;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* Profile Form */
+.formGroup {
+    margin-bottom: 20px;
+}
+
+.label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #4A4659;
+    margin-bottom: 8px;
+}
+
+.input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #E8E4F0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #2D2B3A;
+    transition: all 0.2s;
+}
+
+.input:focus {
+    outline: none;
+    border-color: #8B6DB8;
+    box-shadow: 0 0 0 3px rgba(139, 109, 184, 0.1);
+}
+
+.saveBtn {
+    background: #2D2B3A;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.saveBtn:hover {
+    background: #1a1a2e;
+    transform: translateY(-1px);
+}
+
+.saveBtn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* API Keys */
+.createKeyBtn {
+    background: #F5F3FA;
+    border: 1px solid #E8E4F0;
+    color: #8B6DB8;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.createKeyBtn:hover {
+    background: #E8E4F0;
+    border-color: #D1C8E0;
+}
+
+.keyList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.keyItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: #FAFAFD;
+    border-radius: 8px;
+    border: 1px solid #F0F0F0;
+}
+
+.keyInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.keyLabel {
+    font-weight: 500;
+    color: #2D2B3A;
+    font-size: 14px;
+}
+
+.keyValue {
+    font-family: monospace;
+    font-size: 13px;
+    color: #666;
+    background: #fff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #efefef;
+    display: inline-block;
+}
+
+.keyDate {
+    font-size: 11px;
+    color: #999;
+}
+
+.deleteBtn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #ef4444;
+    font-size: 16px;
+    transition: all 0.2s;
+    border: 1px solid #eee;
+}
+
+.deleteBtn:hover {
+    background: #fee2e2;
+    border-color: #fecaca;
+}
+
+.emptyKeys {
+    text-align: center;
+    padding: 32px;
+    color: #7A7589;
+    font-size: 14px;
+    background: #FAFAFD;
+    border-radius: 8px;
+}

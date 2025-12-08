@@ -1,0 +1,120 @@
+.container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #FAFAFD;
+    padding: 20px;
+}
+
+.card {
+    background: white;
+    border-radius: 24px;
+    padding: 48px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    max-width: 500px;
+    width: 100%;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.icon {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 16px;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 24px;
+    color: #2D2B3A;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.instruction {
+    text-align: center;
+    color: #7A7589;
+    margin-bottom: 32px;
+    line-height: 1.5;
+}
+
+.keyBox {
+    background: #F5F3FA;
+    border: 1px solid #E8E4F0;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.key {
+    font-family: monospace;
+    color: #2D2B3A;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.copyBtn {
+    background: #8B6DB8;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.copyBtn.copied {
+    background: #16A34A;
+}
+
+.steps {
+    background: #FAFAFD;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.steps h3 {
+    margin: 0 0 16px 0;
+    font-size: 14px;
+    color: #2D2B3A;
+}
+
+.steps ol {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.steps li {
+    color: #7A7589;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.steps li:last-child {
+    margin-bottom: 0;
+}
+
+.backLink {
+    display: block;
+    text-align: center;
+    color: #7A7589;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.backLink:hover {
+    color: #8B6DB8;
+}

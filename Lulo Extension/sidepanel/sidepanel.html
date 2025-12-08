@@ -9,35 +9,147 @@
 </head>
 
 <body>
+    <div id="dropOverlay" class="drop-overlay">
+        <div class="drop-message">
+            <span>📂</span>
+            <p>Drop image to attach</p>
+        </div>
+    </div>
+    <!-- Login Overlay -->
+    <div id="loginOverlay" class="login-overlay hidden">
+        <div class="login-content">
+            <div class="login-logo">🪄</div>
+            <h1>Welcome to Lulo</h1>
+            <p>Your AI companion for the web.</p>
+
+            <button id="googleSignInBtn" class="google-btn">
+                <svg width="18" height="18" viewBox="0 0 18 18">
+                    <path
+                        d="M17.64 9.2c0-.637-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
+                        fill="#4285F4"></path>
+                    <path
+                        d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.715H.957v2.332A8.997 8.997 0 0 0 9 18z"
+                        fill="#34A853"></path>
+                    <path
+                        d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"
+                        fill="#FBBC05"></path>
+                    <path
+                        d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.159 6.656 3.58 9 3.58z"
+                        fill="#EA4335"></path>
+                </svg>
+                Sign in with Google
+            </button>
+
+            <p class="login-subtext">You'll be redirected to connect your account.</p>
+
+            <div class="manual-entry-link" id="showManualInput">
+                Enter key manually
+            </div>
+
+            <!-- Inline Manual Input (Hidden) -->
+            <div id="inlineManualInput" class="inline-manual hidden" style="flex-direction: column; gap: 8px;">
+                <p style="font-size: 12px; margin: 0; color: #8B8580; text-align: left;">Paste key from Hey Lulo:</p>
+                <div style="display: flex; gap: 8px; width: 100%;">
+                    <input type="password" id="loginKeyInput" placeholder="lulo_..." />
+                    <button id="loginKeySubmit">Connect</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="panel">
         <header class="header">
-            <h1 class="logo">
-                <span class="logo-icon">✦</span>
-                Lulo
-            </h1>
-            <p class="tagline">Your AI team, working in parallel</p>
+            <div class="header-top">
+                <h1 class="logo"><span class="logo-icon">🪄</span> Lulo</h1>
+                <div class="header-actions">
+                    <button id="screenshotBtn" class="settings-btn" title="Take Screenshot">📷</button>
+                    <button id="settingsBtn" class="settings-btn" title="Settings">⚙️</button>
+                    <button id="projectsBtn" class="settings-btn" title="Projects">📁</button>
+                    <button id="recordBtn" class="settings-btn record-btn" title="Record Screen">🎥</button>
+                </div>
+            </div>
+
+            <!-- Project Bar -->
+            <div class="project-bar">
+                <span id="currentProjectName">General</span>
+                <button id="newProjectBtn" class="mini-btn" title="New Project">+</button>
+            </div>
+
+            <!-- Projects Overlay -->
+            <div id="projectsPanel" class="settings-panel hidden">
+                <div class="settings-header">
+                    <h2>Workspaces</h2>
+                    <button id="closeProjects" class="close-btn">×</button>
+                </div>
+                <div class="projects-content">
+                    <div id="projectsList" class="skills-list">
+                        <!-- Projects injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <p class="tagline">Your AI superpower ✨</p>
         </header>
 
         <div class="chat-container" id="chatContainer">
             <div class="welcome-message">
-                <p>👋 Hi! I'm Lulo, your AI assistant.</p>
-                <p>I can help you automate tasks, research information, and interact with web pages.</p>
+                <p>Hey there! I'm Lulo, your AI superpower.</p>
+                <p>Tell me what you'd like to accomplish, and let's make magic happen together. No tech skills needed –
+                    just your ideas!</p>
             </div>
         </div>
 
         <div class="input-container">
+            <div id="imagePreviewContainer" class="image-previews"></div>
             <div class="input-wrapper">
-                <textarea id="taskInput" placeholder="What would you like to accomplish?" rows="2"></textarea>
+                <textarea id="taskInput" placeholder="What would you like to accomplish? (Drag images here)"
+                    rows="2"></textarea>
                 <button id="submitBtn" class="submit-btn" disabled>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
                     </svg>
                 </button>
             </div>
-            <div class="quick-actions">
-                <button class="action-chip" data-action="screenshot">📸 Screenshot</button>
-                <button class="action-chip" data-action="extract">📄 Extract text</button>
-                <button class="action-chip" data-action="click">👆 Click element</button>
+
+
+            <!-- Settings Overlay -->
+            <div id="settingsPanel" class="settings-panel hidden">
+                <div class="settings-header">
+                    <h2>Lulo Profile</h2>
+                    <button id="closeSettings" class="close-btn">×</button>
+                </div>
+                <div class="settings-content">
+                    <label>Lulo Cloud</label>
+                    <div id="cloudConnectionStatus" class="cloud-status disconnected">
+                        <span class="status-icon">☁️</span>
+                        <span class="status-text">Not Connected</span>
+                    </div>
+                    <button id="connectCloudBtn" class="secondary-btn" style="margin-bottom: 16px;">Connect
+                        Account</button>
+
+                    <div id="manualTokenInput" class="hidden" style="margin-bottom: 24px;">
+                        <input type="password" id="cloudToken" placeholder="Paste access token here">
+                        <button id="saveCloudToken" class="primary-btn small-btn">Save Token</button>
+                    </div>
+
+                    <label>Your Role</label>
+                    <input type="text" id="userRole" placeholder="e.g. Designer, Developer, Writer">
+
+                    <label>Brand Colors / Vibe</label>
+                    <input type="text" id="userBrand" placeholder="e.g. #FF5500, Minimalist, Dark Mode">
+
+                    <label>Custom Instructions</label>
+                    <textarea id="userInstructions" placeholder="e.g. Be concise. Always use emojis."></textarea>
+
+                    <button id="saveSettings" class="primary-btn">Save Profile</button>
+                </div>
+            </div>
+
+            <div class="quick-actions" style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: start;">
+                <button class="action-chip" data-action="Design">🎨 Create something beautiful</button>
+                <button class="action-chip" data-action="Build">🧱 Build a website</button>
+                <button class="action-chip" data-action="Schedule">📅 Organize my time</button>
+                <button class="action-chip" data-action="Research">🔍 Find information</button>
+                <button class="action-chip" data-action="Guide">🎓 Teach me</button>
             </div>
         </div>
     </div>

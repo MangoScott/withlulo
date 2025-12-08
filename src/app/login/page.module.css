@@ -1,0 +1,137 @@
+.container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #FAFAFD 0%, #F5F3FA 100%);
+    padding: 40px 20px;
+    gap: 48px;
+}
+
+.card {
+    background: white;
+    border-radius: 24px;
+    padding: 48px;
+    box-shadow: 0 8px 32px rgba(139, 109, 184, 0.1);
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+}
+
+.logo {
+    margin-bottom: 16px;
+}
+
+.logoIcon {
+    font-size: 56px;
+    display: block;
+    margin-bottom: 16px;
+}
+
+.logoText {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: #2D2B3A;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tagline {
+    color: #7A7589;
+    margin: 0 0 32px 0;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.googleBtn,
+.githubBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.googleBtn {
+    background: white;
+    border: 1px solid #E8E4F0;
+    color: #2D2B3A;
+}
+
+.googleBtn:hover {
+    background: #FAFAFD;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.githubBtn {
+    background: #24292e;
+    color: white;
+}
+
+.githubBtn:hover {
+    background: #1a1e22;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.terms {
+    font-size: 12px;
+    color: #A9A4B8;
+    margin: 0;
+}
+
+/* Features */
+.features {
+    display: flex;
+    gap: 32px;
+    max-width: 800px;
+}
+
+.feature {
+    text-align: center;
+    padding: 24px;
+}
+
+.featureIcon {
+    font-size: 32px;
+    display: block;
+    margin-bottom: 12px;
+}
+
+.feature h3 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #2D2B3A;
+}
+
+.feature p {
+    margin: 0;
+    font-size: 14px;
+    color: #7A7589;
+}
+
+@media (max-width: 768px) {
+    .features {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .card {
+        padding: 32px 24px;
+    }
+}
