@@ -163,13 +163,21 @@ export default function SiteWizard({ mode = 'create', initialData, onCancel, onS
 
             const title = formData.name || formData.handle || formData.businessName || initialData?.title || "My Website";
 
+            // Fallback: If subdomain empty, generate valid one from title
+            let finalSubdomain = subdomain;
+            if (!finalSubdomain) {
+                finalSubdomain = title.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (finalSubdomain.length < 3) finalSubdomain += 'site';
+            }
+
             const payload: any = {
                 title,
                 description,
                 businessType,
                 businessType,
                 theme: theme,
-                subdomain: subdomain // Add subdomain
+                theme: theme,
+                subdomain: finalSubdomain // Use safe subdomain
             };
 
             if (fileData) {
