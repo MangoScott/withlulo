@@ -8,6 +8,7 @@ export interface Theme {
         background: string;
         text: string;
         surface: string;
+        buttonText: string; // Ensure contrast
     };
     fonts: {
         heading: string;
@@ -29,6 +30,7 @@ export const THEMES: Theme[] = [
             background: '#FFFFFF',
             text: '#1F2937',
             surface: '#F3F4F6',
+            buttonText: '#FFFFFF',
         },
         fonts: {
             heading: 'Inter',
@@ -54,6 +56,7 @@ export const THEMES: Theme[] = [
             background: '#FAFAFA',
             text: '#000000',
             surface: '#FFFFFF',
+            buttonText: '#FFFFFF',
         },
         fonts: {
             heading: 'Archivo Black',
@@ -80,6 +83,7 @@ export const THEMES: Theme[] = [
             background: '#0F172A', // Slate 900
             text: '#F8FAFC',
             surface: '#1E293B',
+            buttonText: '#FFFFFF',
         },
         fonts: {
             heading: 'Outfit',

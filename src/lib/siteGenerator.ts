@@ -7,6 +7,7 @@ export interface SiteGenerationInput {
     description: string;
     businessType: string;
     theme?: string;
+    customColor?: string; // NEW: Allow explicit hex override
     fileData?: string; // Base64
     mimeType?: string;
     profileImage?: string; // URL or Base64
@@ -46,7 +47,8 @@ const getPromptForType = (type: string, input: SiteGenerationInput): string => {
     // Default to Modern
     if (!selectedTheme) selectedTheme = THEMES[0];
 
-    const primaryColor = customColor || selectedTheme.colors.primary;
+    // Priority: Input Custom Color > Theme Default
+    const primaryColor = input.customColor || customColor || selectedTheme.colors.primary;
 
     console.log('[SiteGenerator] Using Theme:', selectedTheme.name, 'Primary:', primaryColor);
 
@@ -77,16 +79,17 @@ const getPromptForType = (type: string, input: SiteGenerationInput): string => {
         - About Me: "${about}"
         - Social Links: ${social1} ${social2}
         
-        STRUCTURE:
-        - Header: Name (Left) + Nav [About, Contact] (Right/Hamburger).
-        - Hero: centered or split. "Hi, I'm ${name.split(' ')[0]}". Large modern typography.
-        - Profile Image: ${imgParams} (Rounded and prominent).
-        - Bio Section: Elegant typography, generous whitespace.
-        - Social Section: Minimalist icon buttons.
+        STRUCTURE (MODERN PORTFOLIO):
+        - Navbar: Minimal. Name on left, Links on right.
+        - Hero Section: SPLIT LAYOUT. Text on the Left ("Hi, I'm ${name.split(' ')[0]}"), Large Profile Image on the Right.
+        - Stat/Grid Section: "What I Do" - 3 columns, clean icons.
+        - Bio Section: Full width, elegant typography, generous whitespace.
+        - Footer: Simple, centered.
         - Contact: "Get in Touch" button.
         
         MOBILE REQUIREMENTS:
         - Implement a functional Hamburger Menu for mobile.
+        - Stack columns vertically on mobile.
         `;
     }
 
@@ -248,9 +251,10 @@ export async function generateSite(input: SiteGenerationInput): Promise<Generate
         customColor = input.theme;
     }
     if (!selectedTheme) selectedTheme = THEMES[0];
-    const primaryColor = customColor || selectedTheme.colors.primary;
+    const primaryColor = input.customColor || customColor || selectedTheme.colors.primary;
 
     // FORCE INJECT CSS Variables and Font Imports to guarantee strict design adherence
+    // Added --button-text for contrast
     const themeInjection = `
         <link rel="stylesheet" href="${selectedTheme.fonts.url}">
         <style>
@@ -258,6 +262,7 @@ export async function generateSite(input: SiteGenerationInput): Promise<Generate
                 --primary: ${primaryColor} !important; 
                 --background: ${selectedTheme.colors.background} !important;
                 --text: ${selectedTheme.colors.text} !important;
+                --button-text: ${selectedTheme.colors.buttonText} !important;
                 --radius: ${selectedTheme.borderRadius} !important;
                 --font-heading: '${selectedTheme.fonts.heading}', sans-serif !important;
                 --font-body: '${selectedTheme.fonts.body}', sans-serif !important;
@@ -272,6 +277,7 @@ export async function generateSite(input: SiteGenerationInput): Promise<Generate
             }
             button, .btn, a.btn, [class*="button"], [class*="cta"] { 
                 background-color: var(--primary) !important; 
+                color: var(--button-text) !important;
                 border-color: var(--primary) !important; 
                 border-radius: var(--radius) !important;
             } 

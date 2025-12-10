@@ -86,6 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let userSites = [];
     let selectedBusinessType = '';
     let selectedThemeId = THEMES[0].id;
+    let selectedCustomColor = null; // Default to theme's color
     let currentGeneratedSite = null;
 
     let saveState = () => {
@@ -178,6 +179,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 `).join('')}
             </div>
         </div>
+        
+        <!-- Primary Color Picker -->
+        <div style="margin-top:16px; margin-bottom:16px;">
+            <label class="theme-label" style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                Primary Color 
+                <span id="colorValue" style="font-weight:400; color:var(--text-muted); font-size:0.8rem;">Default</span>
+            </label>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <!-- Presets -->
+                <div class="color-preset" data-color="#3B82F6" style="width:24px; height:24px; border-radius:50%; background:#3B82F6; cursor:pointer; border:2px solid transparent;"></div>
+                <div class="color-preset" data-color="#F97316" style="width:24px; height:24px; border-radius:50%; background:#F97316; cursor:pointer; border:2px solid transparent;"></div>
+                <div class="color-preset" data-color="#10B981" style="width:24px; height:24px; border-radius:50%; background:#10B981; cursor:pointer; border:2px solid transparent;"></div>
+                <div class="color-preset" data-color="#000000" style="width:24px; height:24px; border-radius:50%; background:#000000; cursor:pointer; border:2px solid transparent; border:1px solid #eee;"></div>
+                
+                <!-- Custom Picker -->
+                <div style="position:relative; width:28px; height:28px; border-radius:50%; background:conic-gradient(red, orange, yellow, green, blue, indigo, violet, red); display:flex; align-items:center; justify-content:center; cursor:pointer; margin-left:8px;">
+                     <input type="color" id="customColorPicker" style="opacity:0; position:absolute; left:0; top:0; width:100%; height:100%; cursor:pointer;" title="Pick Custom Color">
+                     <span style="font-size:10px; background:rgba(0,0,0,0.5); color:white; width:100%; height:100%; display:flex; align-items:center; justify-content:center; border-radius:50%; pointer-events:none;">+</span>
+                </div>
+            </div>
+        </div>
         `;
 
         // Add File Upload to all forms
@@ -207,6 +229,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 card.style.background = 'var(--accent-soft)';
             });
         });
+
+        // Add Event Listeners for Color Presets
+        const presets = container.querySelectorAll('.color-preset');
+        const colorValue = document.getElementById('colorValue');
+        const picker = document.getElementById('customColorPicker');
+
+        // Helper
+        const updateColorSelection = (color) => {
+            selectedCustomColor = color;
+            colorValue.textContent = color;
+
+            // Reset borders
+            presets.forEach(p => p.style.borderColor = 'transparent');
+
+            // Highlight matching preset if any
+            const match = Array.from(presets).find(p => p.dataset.color.toLowerCase() === color.toLowerCase());
+            if (match) match.style.borderColor = 'var(--text-primary)';
+        };
+
+        presets.forEach(p => {
+            p.addEventListener('click', () => updateColorSelection(p.dataset.color));
+        });
+
+        if (picker) {
+            picker.addEventListener('input', (e) => {
+                updateColorSelection(e.target.value);
+            });
+        }
 
         // Ensure visible - HARD FORCE
         container.style.display = 'block';
@@ -358,7 +408,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     title,
                     description,
                     businessType: selectedBusinessType,
-                    theme: selectedThemeId, // Pass the ID
+                    theme: selectedThemeId,
+                    customColor: selectedCustomColor,
                     fileData,
                     mimeType,
                     subdomain
