@@ -173,6 +173,7 @@ export async function generateSite(input: SiteGenerationInput): Promise<Generate
     - Ensure fully responsive mobile design.
     - Use generous whitespace and rounded corners.
     - Button styles should be modern (no default borders).
+    - **CRITICAL**: You MUST use the provided ACCENT COLOR (${input.theme || '#3B82F6'}) for all main buttons, links, and highlights. Do NOT use a random color. Define a CSS variable: --accent: ${input.theme || '#3B82F6'}; and use it.
 
     OUTPUT FORMAT:
     Return ONLY valid JSON with this exact structure:

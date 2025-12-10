@@ -78,6 +78,7 @@ export interface Site {
     html_content: string | null;
     css_content: string | null;
     published: boolean;
+    subdomain: string | null;
     custom_domain: string | null;
     view_count: number;
     created_at: string;
