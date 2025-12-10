@@ -227,3 +227,31 @@ CREATE TRIGGER on_auth_user_created
 -- =====================================================
 -- INITIAL SETUP COMPLETE
 -- =====================================================
+
+-- =====================================================
+-- API KEYS (Extension Access)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS public.api_keys (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    key_hash TEXT NOT NULL,
+    label TEXT DEFAULT 'Chrome Extension',
+    last_used_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
+);
+
+-- Enable RLS
+ALTER TABLE public.api_keys ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+CREATE POLICY "Users can insert their own api keys"
+  ON public.api_keys FOR INSERT
+  WITH CHECK ( auth.uid() = user_id );
+
+CREATE POLICY "Users can view their own api keys"
+  ON public.api_keys FOR SELECT
+  USING ( auth.uid() = user_id );
+
+CREATE POLICY "Users can delete their own api keys"
+  ON public.api_keys FOR DELETE
+  USING ( auth.uid() = user_id );

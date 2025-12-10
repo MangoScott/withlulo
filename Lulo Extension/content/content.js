@@ -9,8 +9,9 @@ let luloCursor = null;
 // when user visits heylulo.com
 // ==========================================
 (function autoDetectAuth() {
-    // Only run on heylulo.com
+    // Only run on heylulo.com or the pages.dev deployment
     if (!window.location.hostname.includes('heylulo.com') &&
+        !window.location.hostname.includes('lulo-agent.pages.dev') &&
         !window.location.hostname.includes('localhost')) {
         return;
     }
@@ -55,6 +56,25 @@ let luloCursor = null;
         }
     }, 1500);
 })();
+
+// ==========================================
+// Handshake Listener (Web App -> Content Script)
+// ==========================================
+window.addEventListener('message', (event) => {
+    // Security: Only accept messages from the web app (same window)
+    if (event.source !== window) return;
+
+    if (event.data?.type === 'LULO_AUTH_TOKEN_BROADCAST') {
+        const { token } = event.data;
+        if (token && token.length > 10) {
+            console.log('[Lulo] 🤝 Received auth token broadcast');
+            chrome.runtime.sendMessage({
+                type: 'LULO_AUTH_TOKEN',
+                token: token
+            });
+        }
+    }
+});
 
 // Create the Lulo glow border
 function createLuloGlow() {

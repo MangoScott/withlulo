@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Database } from './supabase';
 import { getEnv } from './env-server';
+import { getRequestContext } from '@cloudflare/next-on-pages';
 
 export * from './supabase';
 
@@ -10,8 +11,17 @@ export function createServerClient(): SupabaseClient<Database> {
     const supabaseServiceKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!supabaseUrl || !supabaseServiceKey) {
-        console.error('Supabase Init Error. Missing variables.');
-        throw new Error('Missing Supabase environment variables');
+        const missing = [];
+        if (!supabaseUrl) missing.push('NEXT_PUBLIC_SUPABASE_URL');
+        if (!supabaseServiceKey) missing.push('SUPABASE_SERVICE_ROLE_KEY');
+
+        console.error(`Supabase Init Error. Missing: ${missing.join(', ')}`);
+
+        // Diagnostic Info
+        const ctx = getRequestContext();
+        const envKeys = ctx?.env ? Object.keys(ctx.env) : (typeof process !== 'undefined' ? Object.keys(process.env) : []);
+
+        throw new Error(`Missing Supabase vars: ${missing.join(', ')}. Available keys: ${envKeys.join(', ')}`);
     }
 
     return createClient<Database>(supabaseUrl, supabaseServiceKey, {

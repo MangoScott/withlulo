@@ -2,3 +2,7 @@ name = "lulo-agent"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".vercel/output/static"
+
+[vars]
+NEXT_PUBLIC_SUPABASE_URL = "https://rmuweepvridyzumotyvm.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJtdXdlZXB2cmlkeXp1bW90eXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwODY5MjAsImV4cCI6MjA4MDY2MjkyMH0.fhUIH9EtVZsvvJC3w-gQ7YwZHPZkRpe-hRG8I190siI"

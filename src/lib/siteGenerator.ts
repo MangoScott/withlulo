@@ -6,6 +6,9 @@ export interface SiteGenerationInput {
     description: string;
     businessType: string;
     theme?: string;
+    fileData?: string; // Base64
+    mimeType?: string;
+    profileImage?: string; // URL or Base64
 }
 
 export interface GeneratedSite {
@@ -13,65 +16,185 @@ export interface GeneratedSite {
     css: string;
 }
 
-const BUSINESS_TYPE_PROMPTS: Record<string, string> = {
-    'coffee-shop': 'a cozy, artisanal coffee shop with warm browns and creams',
-    'restaurant': 'an upscale restaurant with elegant typography and appetizing imagery',
-    'portfolio': 'a creative portfolio showcasing work with bold, modern design',
-    'startup': 'a tech startup with gradient backgrounds and dynamic energy',
-    'agency': 'a professional agency with clean lines and corporate sophistication',
-    'personal': 'a personal brand with friendly, approachable design',
-    'ecommerce': 'an online store with product-focused clean layout',
-    'fitness': 'a fitness brand with energetic colors and motivational feel',
-    'real-estate': 'a real estate business with elegant, trustworthy design',
-    'default': 'a modern, professional business'
+const getPromptForType = (type: string, input: SiteGenerationInput): string => {
+    // Attempt to parse structured data from description (packed by frontend)
+    let data: any = {};
+    let isStructured = false;
+    try {
+        const parsed = JSON.parse(input.description);
+        if (parsed.fields) {
+            data = parsed.fields;
+            isStructured = true;
+        }
+    } catch (e) {
+        // Fallback to raw description string
+    }
+
+    const basePrompt = `You are an expert web designer. Generate a single-page website.`;
+    const accentColor = input.theme || '#3B82F6'; // Default to Blue
+
+    // 1. PERSONAL WEBSITE
+    if (type === 'personal') {
+        const name = data.name || input.title;
+        const about = data.about || input.description;
+        const social1 = data.social1 ? `- Link: ${data.social1}` : '';
+        const social2 = data.social2 ? `- Link: ${data.social2}` : '';
+        const imgParams = input.profileImage ? `USE THIS EXACT IMAGE SOURCE FOR THE PROFILE PHOTO: "${input.profileImage}"` : `Use a placeholder profile image from ui-avatars.com`;
+
+        return `${basePrompt}
+        CONTENT:
+        - Name: "${name}"
+        - About Me: "${about}"
+        - Social Links: ${social1} ${social2}
+        
+        STYLE: Clean, minimalist, premium. 
+        ACCENT COLOR: ${accentColor}.
+        BACKGROUND: White (#ffffff).
+        TYPOGRAPHY: 'Inter', sans-serif.
+        
+        LAYOUT REQUIREMENTS:
+        - Desktop: Horizontal Navbar.
+        - Mobile: CRITICAL: You MUST implement a functional Hamburger Menu for the navigation. 
+          - The inputs are checkboxes or simple JS toggles.
+          - When closed: Show Hamburger Icon (☰).
+          - When open: Show Fullscreen or Dropdown Menu.
+        
+        STRUCTURE:
+        - Header: Name (Left) + Nav [About, Contact] (Right/Hamburger).
+        - Hero: centered or split. "Hi, I'm ${name.split(' ')[0]}". Large modern typography.
+        - Profile Image: ${imgParams} (Rounded and prominent).
+        - Bio Section: Elegant typography, generous whitespace.
+        - Social Section: Minimalist icon buttons.
+        - Contact: "Get in Touch" button using the accent color.
+        `;
+    }
+
+    // 2. BIO CARD (LinkTree style)
+    if (type === 'bio-card') {
+        const handle = data.handle || input.title;
+        const bio = data.bio || input.description;
+        const links = data.links || "Portfolio | #\nTwitter | #";
+        const imgParams = input.profileImage ? `USE THIS EXACT IMAGE SOURCE FOR THE AVATAR: "${input.profileImage}"` : `Use https://ui-avatars.com/api/?name=${encodeURIComponent(handle)}&background=random`;
+
+        return `${basePrompt}
+        CONTENT:
+        - Handle: "${handle}"
+        - Bio: "${bio}"
+        - Links: \n${links}
+        
+        STYLE: Modern, mobile-first, centered card layout.
+        ACCENT COLOR: ${accentColor}.
+        BACKGROUND: Soft gradient using the accent color (very light opacity).
+        
+        STRUCTURE:
+        - Container: Centered Card (max-width 480px) with drop shadow.
+        - Avatar: Circle Image (100x100). ${imgParams}
+        - Name: H1 Centered.
+        - Bio: Small text under name, muted color.
+        - Links: Stack of full-width buttons. Background: ${accentColor}, Text: White. Hover effects.
+        `;
+    }
+
+    // 3. SMALL BUSINESS
+    if (type === 'business') {
+        const busName = data.businessName || input.title;
+        const tagline = data.tagline || "";
+        const services = data.services || input.description;
+        const email = data.email || "";
+
+        return `${basePrompt}
+        CONTENT:
+        - Business Name: "${busName}"
+        - Tagline: "${tagline}"
+        - Services: "${services}"
+        - Contact: "${email}"
+        
+        STYLE: Trustworthy, corporate but modern.
+        ACCENT COLOR: ${accentColor}.
+        STRUCTURE:
+        - Navbar: Logo + Contact Button
+        - Hero: Headline "${busName}", Subhead "${tagline}". high-quality background (unsplash).
+        - Services Grid: 3-item grid. Icons using the accent color.
+        - Testimonials: ONE placeholder testimonial.
+        - Contact: Footer with email link.
+        `;
+    }
+
+    return `${basePrompt} Description: "${input.description}"`;
 };
 
 export async function generateSite(input: SiteGenerationInput): Promise<GeneratedSite> {
-    const apiKey = requireEnv('GEMINI_API_KEY');
+    let apiKey: string | undefined;
+
+    // Helper to get all env keys for debugging
+    const getDebugKeys = () => {
+        const keys = new Set<string>();
+        if (typeof process !== 'undefined' && process.env) Object.keys(process.env).forEach(k => keys.add(k));
+        try {
+            const ctx = require('@cloudflare/next-on-pages').getRequestContext();
+            if (ctx && ctx.env) Object.keys(ctx.env).forEach(k => keys.add(k));
+        } catch (e) { /* ignore */ }
+        return Array.from(keys).filter(k => !k.includes('KEY') && !k.includes('SECRET') || k.startsWith('NEXT_PUBLIC')); // Redact sensitive
+    };
+
+    try {
+        // Try accessing directly from process.env first (Cloudflare sometimes puts it there directly)
+        // Check LULO_GEMINI_KEY first (to bypass potential naming conflicts)
+        apiKey = process.env.LULO_GEMINI_KEY || process.env.GEMINI_API_KEY;
+
+        if (!apiKey) {
+            // Try via getRequestContext
+            try {
+                apiKey = requireEnv('LULO_GEMINI_KEY');
+            } catch {
+                apiKey = requireEnv('GEMINI_API_KEY');
+            }
+        }
+    } catch (e) {
+        const availableKeys = getDebugKeys().join(', ');
+        throw new Error(`Configuration Error: AI Key is missing. Checked LULO_GEMINI_KEY and GEMINI_API_KEY. Available env vars: [${availableKeys}]`);
+    }
+
+    if (!apiKey) {
+        const availableKeys = getDebugKeys().join(', ');
+        throw new Error(`Configuration Error: AI Key is missing. Checked LULO_GEMINI_KEY and GEMINI_API_KEY. Available env vars: [${availableKeys}]`);
+    }
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
-    const businessPrompt = BUSINESS_TYPE_PROMPTS[input.businessType] || BUSINESS_TYPE_PROMPTS['default'];
+    // Construct the full prompt
+    const specificPrompt = getPromptForType(input.businessType, input);
 
-    const prompt = `You are an expert web designer creating a stunning, premium landing page. Generate a complete, beautiful landing page for:
+    const promptText = `${specificPrompt}
+    
+    DESIGN REQUIREMENTS (CRITICAL):
+    - Use 'DM Sans' or 'Inter' from Google Fonts.
+    - Ensure fully responsive mobile design.
+    - Use generous whitespace and rounded corners.
+    - Button styles should be modern (no default borders).
 
-**Business Name:** ${input.title}
-**Description:** ${input.description}
-**Style:** ${businessPrompt}
+    OUTPUT FORMAT:
+    Return ONLY valid JSON with this exact structure:
+    {"html": "<full html content>", "css": "<full css content>"}
+    
+    The HTML should start with <!DOCTYPE html> and include <style> with CSS in the <head>.
+    Do NOT include any explanations.`;
 
-Create a single-page landing page with these sections:
-1. **Hero Section** - Large headline, subheadline, and a call-to-action button
-2. **Features/Services** - 3 key features or services in a grid
-3. **About Section** - Brief about text
-4. **Contact/CTA Section** - Final call-to-action with button
+    let parts: any[] = [promptText];
 
-DESIGN REQUIREMENTS (CRITICAL - follow exactly):
-- Use a warm cream background (#FFFBF7) as the base
-- Primary accent color: #8B6DB8 (purple) for buttons and highlights
-- Dark text: #2D2B3A for headlines, #5d5d6b for body text
-- Typography: Use 'DM Sans' for headings (import from Google Fonts), system fonts for body
-- Large, bold headlines (48-64px) with -0.02em letter-spacing
-- Generous padding (80-100px vertical sections)
-- Rounded corners on buttons (border-radius: 32px) and cards (border-radius: 24px)
-- Subtle shadows: box-shadow: 0 4px 20px rgba(0,0,0,0.08)
-- Smooth hover transitions (0.2s ease)
-- Feature cards with #FFFFFF background on the cream base
-- Mobile responsive using flexbox and max-width containers
+    // Add file data if present
+    if (input.fileData && input.mimeType) {
+        parts.push({
+            inlineData: {
+                data: input.fileData,
+                mimeType: input.mimeType
+            }
+        });
+        parts.push("Use the attached file content to populate the website details (Experience, Bio, Service List, etc). Priority: File Content > Description.");
+    }
 
-BUTTON STYLES:
-- Primary: background #2D2B3A, color white, padding 16px 32px, rounded
-- Secondary: background white, border 1px solid #E8E4DE, color #2D2B3A
-
-OUTPUT FORMAT:
-Return ONLY valid JSON with this exact structure (no markdown, no code blocks):
-{"html": "<full html content>", "css": "<full css content>"}
-
-The HTML should be a complete webpage starting with <!DOCTYPE html> and including the <style> tag with all CSS inline in the head (for portability). The CSS field should contain the same CSS for reference.
-
-Do NOT include any explanations - ONLY the JSON object.`;
-
-    const result = await model.generateContent(prompt);
+    const result = await model.generateContent(parts);
     const response = await result.response;
     const text = response.text();
 

@@ -7,13 +7,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { createBrowserClient, Site } from '@/lib/supabase';
 import styles from './page.module.css';
 import Link from 'next/link';
+import SiteWizard from '@/components/Dashboard/SiteWizard';
 
 export default function SiteDetailPage() {
     const params = useParams();
     const router = useRouter();
     const [site, setSite] = useState<Site | null>(null);
     const [loading, setLoading] = useState(true);
-    const [regenerating, setRegenerating] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
     const [copied, setCopied] = useState(false);
 
     useEffect(() => {
@@ -65,35 +66,6 @@ export default function SiteDetailPage() {
         }
     }
 
-    async function handleRegenerate() {
-        if (!site) return;
-
-        setRegenerating(true);
-        try {
-            const supabase = createBrowserClient();
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) return;
-
-            const response = await fetch(`/api/sites/${site.id}/regenerate`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${session.access_token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({})
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setSite(data.site);
-            }
-        } catch (error) {
-            console.error('Error regenerating site:', error);
-        } finally {
-            setRegenerating(false);
-        }
-    }
-
     async function handleDelete() {
         if (!site || !confirm('Are you sure you want to delete this site?')) return;
 
@@ -139,6 +111,25 @@ export default function SiteDetailPage() {
         );
     }
 
+    if (isEditing) {
+        return (
+            <div className={styles.container}>
+                <div className={styles.header}>
+                    <h1 className={styles.title}>Editing {site.title}</h1>
+                </div>
+                <SiteWizard
+                    mode="edit"
+                    initialData={site}
+                    onCancel={() => setIsEditing(false)}
+                    onSuccess={(updatedSite) => {
+                        setSite(updatedSite);
+                        setIsEditing(false);
+                    }}
+                />
+            </div>
+        );
+    }
+
     return (
         <div className={styles.container}>
             <Link href="/dashboard/sites" className={styles.backLink}>
@@ -167,13 +158,14 @@ export default function SiteDetailPage() {
                     >
                         {copied ? '✓ Copied!' : '📋 Copy Link'}
                     </button>
+
                     <button
                         className={styles.regenerateBtn}
-                        onClick={handleRegenerate}
-                        disabled={regenerating}
+                        onClick={() => setIsEditing(true)}
                     >
-                        {regenerating ? '⚡ Regenerating...' : '🔄 Regenerate'}
+                        ✏️ Edit Content
                     </button>
+
                     <button
                         className={`${styles.publishBtn} ${site.published ? styles.unpublish : ''}`}
                         onClick={handleTogglePublish}

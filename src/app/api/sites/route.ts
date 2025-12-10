@@ -41,21 +41,39 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { title, description, businessType, theme } = body;
+        let { title, description, businessType, theme, fileData, mimeType, profileImage, subdomain } = body;
 
-        if (!title || !description || !businessType) {
+        // Auto-use profile picture from auth provider if not provided
+        if (!profileImage && user.user_metadata?.avatar_url) {
+            profileImage = user.user_metadata.avatar_url;
+        }
+
+        if (!title || !description || !businessType || !subdomain) {
             return NextResponse.json(
-                { error: 'Missing required fields: title, description, businessType' },
+                { error: 'Missing required fields: title, description, businessType, subdomain' },
                 { status: 400 }
             );
         }
+
+        // Validate Subdomain
+        const cleanSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
+        if (cleanSubdomain.length < 3 || cleanSubdomain !== subdomain.toLowerCase()) {
+            return NextResponse.json({ error: 'Subdomain must be lowercase alphanumeric (min 3 chars)' }, { status: 400 });
+        }
+
+        // Check availability (Optional: Rely on DB constraint constraint for now, or pre-check)
+        // Leaving it to DB Unique Exception handling is simpler but less user friendly.
+        // We'll proceed and catch unique error.
 
         // Generate the site content with AI
         const generated = await generateSite({
             title,
             description,
             businessType,
-            theme
+            theme,
+            fileData,
+            mimeType,
+            profileImage
         });
 
         // Create unique slug
@@ -74,13 +92,17 @@ export async function POST(request: NextRequest) {
                 theme: theme || 'modern',
                 html_content: generated.html,
                 css_content: generated.css,
-                published: false
+                published: false,
+                subdomain: cleanSubdomain
             })
             .select()
             .single();
 
         if (error) {
             console.error('Error creating site:', error);
+            if (error.code === '23505') { // Unique violation
+                return NextResponse.json({ error: 'Subdomain is already taken' }, { status: 409 });
+            }
             return NextResponse.json({ error: 'Failed to create site' }, { status: 500 });
         }
 

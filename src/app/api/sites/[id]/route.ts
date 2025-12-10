@@ -50,15 +50,38 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         }
 
         const body = await request.json();
-        const { title, description, published } = body;
+        const { title, description, published, shouldRegenerate, businessType, theme, profileImage, fileData, mimeType } = body;
 
         const supabase = createServerClient();
 
-        // Build update object with only provided fields
+        // Build update object
         const updates: Record<string, unknown> = {};
         if (title !== undefined) updates.title = title;
         if (description !== undefined) updates.description = description;
         if (published !== undefined) updates.published = published;
+        if (businessType !== undefined) updates.business_type = businessType;
+        if (theme !== undefined) updates.theme = theme;
+
+        // If regeneration is requested, run the AI
+        if (shouldRegenerate && description && businessType) {
+            try {
+                const generated = await generateSite({
+                    title: title || 'My Website', // Fallback if not provided, though it should be
+                    description,
+                    businessType,
+                    theme,
+                    fileData,
+                    mimeType,
+                    profileImage
+                });
+
+                updates.html_content = generated.html;
+                updates.css_content = generated.css;
+            } catch (genError) {
+                console.error('Generation failed during update:', genError);
+                return NextResponse.json({ error: 'Failed to regenerate site content' }, { status: 500 });
+            }
+        }
 
         const { data: site, error } = await supabase
             .from('sites')

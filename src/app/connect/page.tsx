@@ -48,15 +48,35 @@ export default function ConnectPage() {
                 return;
             }
 
-            // Use the session access token directly for extension auth
-            const token = session.access_token;
-            setApiKey(token);
+            // Use the session access token to generate a persistent API key
+            const accessToken = session.access_token;
 
-            // Attempt Magic Handshake with extension
-            if (extId && token) {
-                attemptHandshake(extId, token);
-                // Clean up localStorage after successful use
-                localStorage.removeItem('lulo_ext_id');
+            // generateKey checks for existing or creates new
+            const persistentKey = await generateKey(accessToken);
+
+            if (persistentKey) {
+                setApiKey(persistentKey);
+
+                // 1. Broadcast to Content Script (Works without Ext ID)
+                // Retry for 5 seconds to ensure content script is loaded
+                let attempts = 0;
+                const broadcastInterval = setInterval(() => {
+                    window.postMessage({
+                        type: 'LULO_AUTH_TOKEN_BROADCAST',
+                        token: persistentKey
+                    }, '*');
+                    attempts++;
+                    if (attempts > 10) clearInterval(broadcastInterval);
+                }, 500);
+
+                // 2. Attempt Magic Handshake (Direct to Background if Ext ID known)
+                if (extId) {
+                    attemptHandshake(extId, persistentKey);
+                    // Clean up localStorage after successful use
+                    localStorage.removeItem('lulo_ext_id');
+                }
+            } else {
+                setError('Failed to generate API key');
             }
 
             setLoading(false);

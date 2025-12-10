@@ -113,25 +113,41 @@
                 <div id="siteWizard" class="site-wizard hidden">
                     <!-- Step 1: Business Type -->
                     <div id="wizardStep1" class="wizard-step">
-                        <h3>What kind of site?</h3>
-                        <div class="type-grid">
-                            <button class="type-btn" data-type="coffee-shop">☕ Coffee Shop</button>
-                            <button class="type-btn" data-type="restaurant">🍽️ Restaurant</button>
-                            <button class="type-btn" data-type="portfolio">💼 Portfolio</button>
-                            <button class="type-btn" data-type="startup">🚀 Startup</button>
-                            <button class="type-btn" data-type="agency">🏢 Agency</button>
-                            <button class="type-btn" data-type="personal">👤 Personal</button>
-                            <button class="type-btn" data-type="ecommerce">🛍️ E-Commerce</button>
-                            <button class="type-btn" data-type="fitness">💪 Fitness</button>
-                            <button class="type-btn" data-type="real-estate">🏠 Real Estate</button>
+                        <h3>Choose your starting point</h3>
+                        <div class="template-options">
+                            <button class="template-card" data-type="personal">
+                                <span class="template-icon">👤</span>
+                                <div class="template-info">
+                                    <h4>Personal</h4>
+                                    <p>Portfolio & Resume</p>
+                                </div>
+                            </button>
+                            <button class="template-card" data-type="bio-card">
+                                <span class="template-icon">🔗</span>
+                                <div class="template-info">
+                                    <h4>Bio Card</h4>
+                                    <p>Links & Profile</p>
+                                </div>
+                            </button>
+                            <button class="template-card" data-type="business">
+                                <span class="template-icon">🏢</span>
+                                <div class="template-info">
+                                    <h4>Small Business</h4>
+                                    <p>Services & Landing</p>
+                                </div>
+                            </button>
                         </div>
                     </div>
 
                     <!-- Step 2: Details -->
                     <div id="wizardStep2" class="wizard-step hidden">
-                        <h3>Tell us about it</h3>
-                        <input type="text" id="siteTitle" placeholder="Site name (e.g., Bean & Brew)" />
-                        <textarea id="siteDescription" placeholder="Describe your business..." rows="3"></textarea>
+                        <h3 id="step2Title">Tell us about it</h3>
+
+                        <!-- Dynamic Form Container -->
+                        <div id="dynamicFormContainer">
+                            <!-- Injected via JS based on type -->
+                        </div>
+
                         <div class="wizard-actions">
                             <button id="wizardBack" class="secondary-btn">← Back</button>
                             <button id="wizardGenerate" class="primary-btn">✨ Generate</button>

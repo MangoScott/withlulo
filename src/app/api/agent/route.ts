@@ -41,11 +41,25 @@ export async function POST(req: Request) {
     const { prompt, context, images, conversationId: reqConversationId } = body;
     const authHeader = req.headers.get('Authorization');
     const token = authHeader?.replace('Bearer ', '');
-    const apiKey = getEnv('GEMINI_API_KEY');
+    // ROBUST KEY CHECK (copied from siteGenerator.ts)
+    // Helper to get all env keys for debugging
+    const getDebugKeys = () => {
+      const keys = new Set<string>();
+      if (typeof process !== 'undefined' && process.env) Object.keys(process.env).forEach(k => keys.add(k));
+      try {
+        const ctx = require('@cloudflare/next-on-pages').getRequestContext();
+        if (ctx && ctx.env) Object.keys(ctx.env).forEach(k => keys.add(k));
+      } catch (e) { /* ignore */ }
+      return Array.from(keys).filter(k => !k.includes('KEY') && !k.includes('SECRET') || k.startsWith('NEXT_PUBLIC'));
+    };
+
+    // Check LULO_GEMINI_KEY first, then GEMINI_API_KEY
+    const apiKey = getEnv('LULO_GEMINI_KEY') || getEnv('GEMINI_API_KEY');
 
     if (!apiKey) {
+      const availableKeys = getDebugKeys().join(', ');
       return NextResponse.json(
-        { error: "Server API Key is missing" },
+        { error: `Server API Key is missing. Checked LULO_GEMINI_KEY/GEMINI_API_KEY. Available: [${availableKeys}]` },
         { status: 500, headers: corsHeaders }
       );
     }

@@ -11,6 +11,7 @@ const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' }); // or which
 export const POST = async (request: NextRequest) => {
     return withAuth(request, async (req, userId) => {
         try {
+            console.log('Chat API Request [v2-debug] - Starting processing');
             const { conversationId, content } = await request.json();
 
             if (!conversationId || !content) {

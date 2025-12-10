@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lulo Sidepanel Debug</title>
+    <link rel="stylesheet" href="sidepanel.css">
+    <style>
+        body {
+            width: 400px;
+            height: 600px;
+            border: 1px solid #ccc;
+            margin: 20px auto;
+        }
+    </style>
+    <script>
+        // MOCK CHROME API
+        window.chrome = {
+            storage: {
+                sync: {
+                    get: (keys) => Promise.resolve({ luloCloudToken: 'mock-token' }),
+                    set: () => Promise.resolve()
+                },
+                local: {
+                    get: (keys, cb) => cb && cb({}),
+                    set: () => Promise.resolve(),
+                    remove: () => Promise.resolve()
+                }
+            },
+            runtime: {
+                sendMessage: () => console.log('Mock sendMessage'),
+                onMessage: { addListener: () => console.log('Mock onMessage') }
+            },
+            tabs: {
+                create: (target) => console.log('Mock tabs.create', target)
+            }
+        };
+    </script>
+</head>
+
+<body>
+    <!-- COPY OF SIDEPANEL.HTML CONTENT -->
+    <div class="panel">
+        <div class="header">
+            <div class="header-top">
+                <div class="logo">
+                    <span class="logo-icon">✨</span>
+                    Lulo
+                </div>
+                <div class="header-actions">
+                    <button id="authBtn" class="settings-btn" title="Sign In">🔑</button>
+                    <button id="settingsBtn" class="settings-btn" title="Settings">⚙️</button>
+                </div>
+            </div>
+            <div class="project-bar">
+                <span>Project: <span id="currentProjectName">My Awesome Site</span></span>
+                <button id="projectsBtn" class="mini-btn">Switch</button>
+            </div>
+        </div>
+
+        <div class="sites-content hidden">
+            <!-- SITES LIST -->
+        </div>
+
+        <!-- SITE WIZARD (Step 1 is default for debug) -->
+        <div id="siteWizard" class="site-wizard">
+            <!-- Step 1: Business Type -->
+            <div id="wizardStep1" class="wizard-step">
+                <h3>Choose your starting point</h3>
+                <div class="template-options">
+                    <button class="template-card" data-type="personal">
+                        <span class="template-icon">👤</span>
+                        <div class="template-info">
+                            <h4>Personal</h4>
+                            <p>Portfolio & Resume</p>
+                        </div>
+                    </button>
+                    <button class="template-card" data-type="bio-card">
+                        <span class="template-icon">🔗</span>
+                        <div class="template-info">
+                            <h4>Bio Card</h4>
+                            <p>Links & Profile</p>
+                        </div>
+                    </button>
+                    <button class="template-card" data-type="business">
+                        <span class="template-icon">🏢</span>
+                        <div class="template-info">
+                            <h4>Small Business</h4>
+                            <p>Services & Landing</p>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Details -->
+            <div id="wizardStep2" class="wizard-step hidden">
+                <h3 id="step2Title">Tell us about it</h3>
+                <!-- Dynamic Form Container -->
+                <div id="dynamicFormContainer">
+                    <!-- Injected via JS based on type -->
+                </div>
+                <div class="wizard-actions">
+                    <button id="wizardBack" class="secondary-btn">← Back</button>
+                    <button id="wizardGenerate" class="primary-btn">✨ Generate</button>
+                </div>
+            </div>
+
+            <div id="wizardStep3" class="wizard-step hidden">
+                <div class="generating">
+                    <div class="spinner"></div>
+                    <h3 id="generatingStatus">Creating your site...</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="sidepanel.js"></script>
+</body>
+
+</html>
