@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div style="margin-bottom:16px;">
             <label style="font-size:0.8rem; font-weight:600; display:block; margin-bottom:4px; color:var(--text-secondary);">Claim your URL</label>
             <div style="display:flex; align-items:stretch;">
-                <input type="text" class="dynamic-input" name="subdomain" placeholder="username" style="border-radius:6px 0 0 6px; border-right:none; flex:1;" required pattern="[a-z0-9\\-]{3,}">
+                <input type="text" class="dynamic-input" name="subdomain" placeholder="username" style="border-radius:6px 0 0 6px; border-right:none; flex:1;" pattern="[a-z0-9\\-]{3,}">
                 <div style="background:var(--bg-secondary); padding:10px 12px; border:2px solid var(--border-subtle); border-left:none; border-radius:0 6px 6px 0; font-size:0.85rem; color:var(--text-secondary); display:flex; align-items:center; box-sizing:border-box;">.heylulo.com</div>
             </div>
             <p style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Lowercase letters, numbers, dashes</p>
@@ -286,11 +286,18 @@ document.addEventListener('DOMContentLoaded', () => {
             // Title fallback
             const title = data.name || data.handle || data.businessName || "My Website";
 
+            // Subdomain Fallback
+            let finalSubdomain = data.subdomain;
+            if (!finalSubdomain) {
+                finalSubdomain = title.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (finalSubdomain.length < 3) finalSubdomain += 'site';
+            }
+
             showWizardStep(3);
             startSpinnerRotation();
 
             // Pass fileData and mimeType separately (not in description JSON)
-            await generateSite(title, description, fileData, mimeType, data.subdomain);
+            await generateSite(title, description, fileData, mimeType, finalSubdomain);
 
             if (spinnerInterval) clearInterval(spinnerInterval);
         });
@@ -338,7 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     title,
                     description, // This now contains the JSON string of form data
                     businessType: selectedBusinessType,
-                    theme: selectedThemeColor || 'modern',
+                    theme: selectedThemeColor || '#3B82F6',
                     fileData, // Base64
                     mimeType,
                     subdomain
