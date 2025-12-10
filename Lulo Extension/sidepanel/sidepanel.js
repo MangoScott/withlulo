@@ -1,6 +1,9 @@
 // Side Panel JavaScript
 document.addEventListener('DOMContentLoaded', () => {
 
+    const WEB_URL = 'https://lulo-agent.pages.dev';
+    const AUTH_URL = `${WEB_URL}/connect`;
+
     // DOM Elements
     const chatContainer = document.getElementById('chatContainer');
     const taskInput = document.getElementById('taskInput');
@@ -8,6 +11,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const actionChips = document.querySelectorAll('.action-chip');
     const previewContainer = document.getElementById('imagePreviewContainer');
     const dropOverlay = document.getElementById('dropOverlay');
+
+    // Auth Elements
+    const loginOverlay = document.getElementById('loginOverlay');
+    const googleSignInBtn = document.getElementById('googleSignInBtn');
+    const showManualInput = document.getElementById('showManualInput');
+    const inlineManualInput = document.getElementById('inlineManualInput');
+    const loginKeyInput = document.getElementById('loginKeyInput');
+    const loginKeySubmit = document.getElementById('loginKeySubmit');
 
     // Settings Elements
     const settingsBtn = document.getElementById('settingsBtn');
@@ -34,8 +45,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const newProjectBtn = document.getElementById('newProjectBtn');
 
     // Recording Elements
-    const recordBtn = document.getElementById('recordBtn');
-    const screenshotBtn = document.getElementById('screenshotBtn');
+    const captureBtn = document.getElementById('captureBtn');
+    const captureOverlay = document.getElementById('captureOverlay');
+    const closeCapture = document.getElementById('closeCapture');
+    const recordOptionBtn = document.getElementById('recordOptionBtn');
+    const screenshotOptionBtn = document.getElementById('screenshotOptionBtn');
 
     // Sites Elements
     const sitesBtn = document.getElementById('sitesBtn');
@@ -103,9 +117,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let subdomainHtml = `
         <div style="margin-bottom:16px;">
             <label style="font-size:0.8rem; font-weight:600; display:block; margin-bottom:4px; color:var(--text-secondary);">Claim your URL</label>
-            <div style="display:flex; align-items:center;">
-                <input type="text" class="dynamic-input" name="subdomain" placeholder="username" style="border-radius:6px 0 0 6px; border-right:none; flex:1;" required pattern="[a-z0-9-]{3,}">
-                <div style="background:var(--bg-secondary); padding:0 12px; border:1px solid var(--border-subtle); border-left:none; border-radius:0 6px 6px 0; font-size:0.85rem; color:var(--text-secondary); height:38px; display:flex; align-items:center; box-sizing:border-box;">.heylulo.com</div>
+            <div style="display:flex; align-items:stretch;">
+                <input type="text" class="dynamic-input" name="subdomain" placeholder="username" style="border-radius:6px 0 0 6px; border-right:none; flex:1;" required pattern="[a-z0-9\\-]{3,}">
+                <div style="background:var(--bg-secondary); padding:10px 12px; border:2px solid var(--border-subtle); border-left:none; border-radius:0 6px 6px 0; font-size:0.85rem; color:var(--text-secondary); display:flex; align-items:center; box-sizing:border-box;">.heylulo.com</div>
             </div>
             <p style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Lowercase letters, numbers, dashes</p>
         </div>
@@ -545,31 +559,157 @@ document.addEventListener('DOMContentLoaded', () => {
     const logo = document.querySelector('.logo');
     if (logo) logo.addEventListener('click', () => chrome.tabs.create({ url: 'https://lulo-agent.pages.dev/dashboard' }));
 
-    if (recordBtn) {
-        recordBtn.addEventListener('click', async () => {
-            isRecording = !isRecording;
-            if (isRecording) {
-                recordBtn.classList.add('recording');
-                recordBtn.textContent = '⏹';
-            } else {
-                recordBtn.classList.remove('recording');
-                recordBtn.textContent = '🎥';
+    // ==========================================
+    // UNIFIED CAPTURE HANDLERS
+    // ==========================================
+
+    if (captureBtn) {
+        captureBtn.addEventListener('click', () => {
+            if (captureOverlay) {
+                const isHidden = captureOverlay.classList.contains('hidden');
+                // Close others
+                if (settingsPanel) settingsPanel.classList.add('hidden');
+                if (projectsPanel) projectsPanel.classList.add('hidden');
+                if (sitesPanel) sitesPanel.classList.add('hidden');
+
+                if (isHidden) {
+                    captureOverlay.classList.remove('hidden');
+                } else {
+                    captureOverlay.classList.add('hidden');
+                }
             }
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            if (tab) chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_RECORDING', shouldRecord: isRecording });
         });
     }
 
-    if (screenshotBtn) {
-        screenshotBtn.addEventListener('click', async () => {
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            if (tab) chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_SCREENSHOT_MODE' });
-            window.close();
+    if (closeCapture) {
+        closeCapture.addEventListener('click', () => {
+            if (captureOverlay) captureOverlay.classList.add('hidden');
         });
     }
 
+    if (recordOptionBtn) {
+        recordOptionBtn.addEventListener('click', async () => {
+            console.log('🎥 Record option clicked');
+            // Close overlay
+            if (captureOverlay) captureOverlay.classList.add('hidden');
+
+            try {
+                // Trigger recording logic
+                const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+                console.log('Found tabs:', tabs);
+                const tab = tabs[0];
+
+                if (tab) {
+                    console.log('Sending TOGGLE_RECORDING to tab:', tab.id);
+                    chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_RECORDING' }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            console.error('Message failed:', chrome.runtime.lastError);
+                        } else {
+                            console.log('Message sent, response:', response);
+                            // Auto-close for clean recording
+                            window.close();
+                        }
+                    });
+
+                    // Add visual feedback class to capture button (simplified)
+                    if (captureBtn) captureBtn.classList.add('recording');
+                } else {
+                    console.warn('No active tab found');
+                }
+            } catch (err) {
+                console.error('Error in record handler:', err);
+            }
+        });
+    }
+
+    if (screenshotOptionBtn) {
+        screenshotOptionBtn.addEventListener('click', async () => {
+            console.log('📷 Screenshot option clicked');
+            // Close overlay
+            if (captureOverlay) captureOverlay.classList.add('hidden');
+
+            try {
+                // Take Screenshot
+                const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+                console.log('Found tabs for screenshot:', tabs);
+                const tab = tabs[0];
+
+                if (tab) {
+                    console.log('Sending TAKE_SCREENSHOT to tab:', tab.id);
+                    chrome.tabs.sendMessage(tab.id, { type: 'TAKE_SCREENSHOT' }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            console.error('Screenshot Message failed:', chrome.runtime.lastError);
+                        } else {
+                            console.log('Screenshot command sent');
+                        }
+                    });
+                } else {
+                    console.warn('No active tab found for screenshot');
+                }
+            } catch (err) {
+                console.error('Error in screenshot handler:', err);
+            }
+        });
+    }
+
+    // LISTENER FOR STOP RECORDING (to reset UI)
+    chrome.runtime.onMessage.addListener((message) => {
+        if (message.action === 'RECORDING_STOPPED' && captureBtn) {
+            captureBtn.classList.remove('recording');
+        }
+    });
     // Start
-    initProjects();
+    checkAuthAndInit();
+
+    // ==========================================
+    // AUTHENTICATION LOGIC
+    // ==========================================
+
+    function checkAuthAndInit() {
+        chrome.storage.sync.get(['luloCloudToken'], (result) => {
+            if (result.luloCloudToken) {
+                // HIDE OVERLAY
+                if (loginOverlay) loginOverlay.classList.add('hidden');
+                initProjects();
+                updateCloudStatus(result.luloCloudToken);
+            } else {
+                // SHOW OVERLAY
+                if (loginOverlay) loginOverlay.classList.remove('hidden');
+            }
+        });
+    }
+
+    if (googleSignInBtn) {
+        googleSignInBtn.addEventListener('click', () => {
+            const extId = chrome.runtime.id;
+            chrome.tabs.create({ url: `${AUTH_URL}?ext_id=${extId}` });
+        });
+    }
+
+    if (showManualInput) {
+        showManualInput.addEventListener('click', () => {
+            if (inlineManualInput) inlineManualInput.classList.remove('hidden');
+            showManualInput.classList.add('hidden');
+        });
+    }
+
+    if (loginKeySubmit) {
+        loginKeySubmit.addEventListener('click', () => {
+            const key = loginKeyInput.value.trim();
+            if (key) {
+                chrome.storage.sync.set({ luloCloudToken: key }, () => {
+                    checkAuthAndInit(); // Re-run check to hide overlay
+                });
+            }
+        });
+    }
+
+    // LISTENER FOR TOKEN UPDATES (e.g. from Content Script)
+    chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === 'sync' && changes.luloCloudToken) {
+            checkAuthAndInit();
+        }
+    });
 
     // ==========================================
     // CHAT HELPERS

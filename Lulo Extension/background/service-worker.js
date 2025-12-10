@@ -42,6 +42,8 @@ async function handleMessage(message, sender) {
             return await enableClickMode();
         case 'EXECUTE_ACTION':
             return await executeAction(message);
+        case 'OPEN_SIDEPANEL':
+            return await openSidePanel(sender);
         default:
             return { success: false, error: 'Unknown message type' };
     }
@@ -949,3 +951,15 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         chrome.sidePanel.open({ windowId: tab.windowId });
     }
 });
+
+async function openSidePanel(sender) {
+    try {
+        if (sender.tab) {
+            await chrome.sidePanel.open({ windowId: sender.tab.windowId });
+            return { success: true };
+        }
+        return { success: false, error: 'No tab info' };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+}

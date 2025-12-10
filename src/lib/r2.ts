@@ -1,25 +1,31 @@
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { getEnv } from './env-server';
 
 // R2 Configuration
-const R2_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
-const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
-const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
-const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || 'lulo-recordings';
-const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL; // Optional: Custom domain for public access
+// Use getEnv to support both Node and Edge runtimes
+const getR2Config = () => ({
+    accountId: getEnv('CLOUDFLARE_ACCOUNT_ID') || getEnv('R2_ACCOUNT_ID'),
+    accessKeyId: getEnv('R2_ACCESS_KEY_ID'),
+    secretAccessKey: getEnv('R2_SECRET_ACCESS_KEY'),
+    bucketName: getEnv('R2_BUCKET_NAME') || 'lulo-recordings',
+    publicUrl: getEnv('R2_PUBLIC_URL')
+});
 
 // Create S3 client configured for Cloudflare R2
 function getR2Client() {
-    if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
+    const { accountId, accessKeyId, secretAccessKey } = getR2Config();
+
+    if (!accountId || !accessKeyId || !secretAccessKey) {
         throw new Error('Missing R2 environment variables');
     }
 
     return new S3Client({
         region: 'auto',
-        endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+        endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
         credentials: {
-            accessKeyId: R2_ACCESS_KEY_ID,
-            secretAccessKey: R2_SECRET_ACCESS_KEY
+            accessKeyId,
+            secretAccessKey
         }
     });
 }
@@ -31,9 +37,10 @@ export async function getUploadUrl(
     expiresIn: number = 900 // 15 minutes
 ): Promise<string> {
     const client = getR2Client();
+    const { bucketName } = getR2Config();
 
     const command = new PutObjectCommand({
-        Bucket: R2_BUCKET_NAME,
+        Bucket: bucketName,
         Key: key,
         ContentType: contentType
     });
@@ -47,9 +54,10 @@ export async function getDownloadUrl(
     expiresIn: number = 3600 // 1 hour
 ): Promise<string> {
     const client = getR2Client();
+    const { bucketName } = getR2Config();
 
     const command = new GetObjectCommand({
-        Bucket: R2_BUCKET_NAME,
+        Bucket: bucketName,
         Key: key
     });
 
@@ -58,19 +66,21 @@ export async function getDownloadUrl(
 
 // Get public URL for a file (if bucket has public access configured)
 export function getPublicUrl(key: string): string {
-    if (R2_PUBLIC_URL) {
-        return `${R2_PUBLIC_URL}/${key}`;
+    const { publicUrl, bucketName, accountId } = getR2Config();
+    if (publicUrl) {
+        return `${publicUrl}/${key}`;
     }
     // Fallback to R2.dev URL if configured
-    return `https://${R2_BUCKET_NAME}.${R2_ACCOUNT_ID}.r2.dev/${key}`;
+    return `https://${bucketName}.${accountId}.r2.dev/${key}`;
 }
 
 // Delete a file from R2
 export async function deleteFile(key: string): Promise<void> {
     const client = getR2Client();
+    const { bucketName } = getR2Config();
 
     const command = new DeleteObjectCommand({
-        Bucket: R2_BUCKET_NAME,
+        Bucket: bucketName,
         Key: key
     });
 

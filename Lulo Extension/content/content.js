@@ -545,10 +545,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         // 2. Presentation: Lulo Loom
         case 'TOGGLE_RECORDING': {
-            if (message.shouldRecord) {
-                startRecording();
-            } else {
+            // If explicit state provided, use it. Otherwise toggle based on current state.
+            const shouldRecord = (typeof message.shouldRecord !== 'undefined')
+                ? message.shouldRecord
+                : (mediaRecorder && mediaRecorder.state !== 'inactive');
+
+            // If we are recording (state !== inactive) and shouldRecord is true (meaning we want to START), it's a no-op?
+            // Wait, logic inversion.
+            // Simplified:
+            // If currently recording -> Stop
+            // If not recording -> Start
+
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 stopRecording();
+            } else {
+                startRecording();
             }
             sendResponse({ status: 'rec_toggled' });
             break;
@@ -579,6 +590,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         case 'TOGGLE_SCREENSHOT_MODE':
+            toggleScreenshotMode();
+            sendResponse({ success: true });
+            break;
+
+        case 'TAKE_SCREENSHOT':
+            // New Unified Flow: Immediately enter screenshot selection mode
+            // or if we want full screen immediately? The UI said "Screenshot", user expects to select area or snap?
+            // Existing logic is "Screenshot Mode" which allows selection.
             toggleScreenshotMode();
             sendResponse({ success: true });
             break;
@@ -1169,10 +1188,13 @@ let mediaRecorder = null;
 let recordedChunks = [];
 let screenStream = null;
 let camStream = null;
+
 let isGlowEnabled = true;
+let shouldSave = true;
 
 async function startRecording() {
     try {
+        shouldSave = true; // Reset flag
         // 1. Face Bubble (Webcam Video Only)
         await createFaceBubble();
 
@@ -1433,6 +1455,13 @@ function stopRecording() {
 }
 
 async function saveRecording() {
+    if (!shouldSave) {
+        showNotification("Recording discarded 🗑️", "info");
+        // Notify Sidepanel
+        chrome.runtime.sendMessage({ action: 'RECORDING_STOPPED' });
+        return;
+    }
+
     const blob = new Blob(recordedChunks, { type: 'video/webm' });
     const fileSizeBytes = blob.size;
     const durationSeconds = recordingSeconds;
@@ -1447,7 +1476,7 @@ async function saveRecording() {
     }).replace(':', '-').replace(' ', '');
     const filename = `Lulo Recording - ${dateStr} ${timeStr}.webm`;
 
-    // 1. ALWAYS save locally first (most reliable)
+    // 1. ALWAYS save locally first (Backup)
     showNotification("Saving recording... 💾");
 
     const url = URL.createObjectURL(blob);
@@ -1457,22 +1486,55 @@ async function saveRecording() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-
-    // Small delay before revoking URL
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-    // 2. Try to create recording metadata in dashboard (if logged in)
+    // 2. Upload to Cloud (if logged in)
     const { luloCloudToken } = await chrome.storage.sync.get(['luloCloudToken']);
 
     if (luloCloudToken) {
         try {
+            showNotification("Uploading to cloud... ☁️");
+
+            // A. Get Upload URL
+            // USE PROD (localhost fails on HTTPS due to Mixed Content)
+            const API_URL = 'https://heylulo.com/api/recordings/upload';
+
+            const uploadRes = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${luloCloudToken}`
+                },
+                body: JSON.stringify({
+                    filename: filename,
+                    contentType: 'video/webm',
+                    size: fileSizeBytes
+                })
+            });
+
+            if (!uploadRes.ok) {
+                const errText = await uploadRes.text();
+                throw new Error(`Failed to get upload URL (${uploadRes.status}): ${errText}`);
+            }
+            const { uploadUrl, key } = await uploadRes.json();
+
+            // B. Upload File to R2
+            const putRes = await fetch(uploadUrl, {
+                method: 'PUT',
+                body: blob,
+                headers: {
+                    'Content-Type': 'video/webm'
+                }
+            });
+
+            if (!putRes.ok) throw new Error('Failed to upload file to R2');
+
+            // C. Create Metadata
             const title = `Recording - ${dateStr} ${timeStr}`;
+            // Use same base URL logic
+            const META_URL = 'https://heylulo.com/api/recordings';
 
-            // Create recording entry in database
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
-
-            const response = await fetch('https://heylulo.com/api/recordings', {
+            const metaRes = await fetch(META_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1480,29 +1542,33 @@ async function saveRecording() {
                 },
                 body: JSON.stringify({
                     title: title,
-                    description: `Recorded with Lulo Extension (${Math.round(fileSizeBytes / 1024 / 1024)}MB, ${Math.floor(durationSeconds / 60)}:${(durationSeconds % 60).toString().padStart(2, '0')})`,
+                    description: `Recorded with Lulo Extension`,
                     duration_seconds: durationSeconds,
                     file_size_bytes: fileSizeBytes,
-                    status: 'ready', // Mark as ready since we saved locally
+                    webm_key: key, // Use the R2 key
+                    status: 'ready',
                     is_public: false
-                }),
-                signal: controller.signal
+                })
             });
-            clearTimeout(timeoutId);
 
-            if (response.ok) {
-                showNotification("Saved! Check Downloads folder & Dashboard 📁✨");
+            if (metaRes.ok) {
+                showNotification("Uploaded! Check your Dashboard 🚀");
             } else {
-                console.warn('Failed to create recording metadata:', await response.text());
-                showNotification("Saved to Downloads! (Couldn't sync to cloud) 📁");
+                const errText = await metaRes.text();
+                console.error('Failed to save metadata:', errText);
+                showNotification("Upload OK, but metadata failed: " + errText.slice(0, 30));
             }
+
         } catch (err) {
-            console.warn('Could not sync to cloud:', err);
-            showNotification("Saved to Downloads! 📁");
+            console.warn('Cloud upload failed:', err);
+            showNotification("Saved locally (Upload failed) 📁");
         }
     } else {
-        showNotification("Saved to Downloads! Sign in to sync to cloud ☁️");
+        showNotification("Saved locally! Sign in to sync ☁️");
     }
+
+    // Notify Sidepanel
+    chrome.runtime.sendMessage({ action: 'RECORDING_STOPPED' });
 }
 
 // PiP State
@@ -1511,168 +1577,164 @@ let pipWindow = null;
 async function createFaceBubble() {
     if (faceBubble || pipWindow) return;
 
-    // Try Document Picture-in-Picture first (Chrome 111+)
-    if ('documentPictureInPicture' in window) {
-        try {
-            // Request a small PiP window
-            pipWindow = await window.documentPictureInPicture.requestWindow({
-                width: 250,
-                height: 250,
-            });
+    // FORCE DOM BUBBLE (PiP is rectangular/awkward)
+    // if ('documentPictureInPicture' in window) {
+    //     try {
+    //         // Request a small PiP window
+    //         pipWindow = await window.documentPictureInPicture.requestWindow({
+    //             width: 250,
+    //             height: 250,
+    //         });
 
-            // Copy styles to PiP window
-            // We need to copy the Lulo styles (blob cursor etc not needed, but general styles useful)
-            // Actually, we just need the bubble styles. We'll inject them directly.
-            const style = pipWindow.document.createElement('style');
-            style.textContent = `
-                    body { 
-                        margin: 0; 
-                        background: transparent; 
-                        display: flex; 
-                        align-items: center; 
-                        justify-content: center; 
-                        height: 100vh; 
-                        width: 100vw;
-                        overflow: hidden;
-                    }
-                    .lulo-face-bubble {
-                        width: 100%;
-                        height: 100%;
-                        border-radius: 50%;
-                        border: 4px solid #8B6DB8;
-                        overflow: hidden;
-                        box-shadow: 0 0 0 2px rgba(139, 109, 184, 0.15);
-                        background: #1a1a2e;
-                        position: relative;
-                    }
-                    video {
-                        width: 100%;
-                        height: 100%;
-                        object-fit: cover;
-                    }
-                    .lulo-controls {
-                        position: absolute;
-                        bottom: 0;
-                        left: 0;
-                        width: 100%;
-                        padding: 10px;
-                        display: flex;
-                        justify-content: center;
-                        gap: 8px;
-                        background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
-                        transform: translateY(100%);
-                        transition: transform 0.2s;
-                        opacity: 0;
-                    }
-                    body:hover .lulo-controls {
-                        transform: translateY(0);
-                        opacity: 1;
-                    }
-                    button {
-                        width: 32px; height: 32px;
-                        border-radius: 50%;
-                        border: none;
-                        color: white;
-                        cursor: pointer;
-                        display: flex; align-items: center; justify-content: center;
-                        font-size: 14px;
-                        transition: transform 0.1s;
-                    }
-                    button:hover { transform: scale(1.1); }
-                    .lulo-timer-badge {
-                        position: absolute;
-                        top: 10px;
-                        left: 50%;
-                        transform: translateX(-50%);
-                        background: #8B6DB8;
-                        color: white;
-                        padding: 2px 8px;
-                        border-radius: 10px;
-                        font-size: 10px;
-                        font-family: monospace;
-                        font-weight: bold;
-                        pointer-events: none;
-                    }
-                `;
-            pipWindow.document.head.appendChild(style);
+    //         // Copy styles to PiP window
+    //         // We need to copy the Lulo styles (blob cursor etc not needed, but general styles useful)
+    //         // Actually, we just need the bubble styles. We'll inject them directly.
+    //         style.textContent = `
+    //                 body { 
+    //                     margin: 0; 
+    //                     background: #000;
+    //                     display: flex; 
+    //                     align-items: center; 
+    //                     justify-content: center; 
+    //                     height: 100vh; 
+    //                     width: 100vw;
+    //                     overflow: hidden;
+    //                     font-family: -apple-system, sans-serif;
+    //                 }
+    //                 .lulo-face-bubble {
+    //                     width: 100%;
+    //                     height: 100%;
+    //                     /* Premium Circle Look */
+    //                     border-radius: 50%; 
+    //                     border: 4px solid #8B6DB8;
+    //                     overflow: hidden;
+    //                     box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    //                 }
+    //                 video {
+    //                     width: 100%;
+    //                     height: 100%;
+    //                     object-fit: cover;
+    //                     transform: scale(1.1); /* Zoom slightly to fill */
+    //                 }
+    //                 /* Simplified controls for reliability */
+    //                 .lulo-controls {
+    //                     position: absolute;
+    //                     bottom: 10px;
+    //                     left: 0; 
+    //                     width: 100%;
+    //                     display: flex;
+    //                     justify-content: center;
+    //                     gap: 8px;
+    //                     opacity: 0;
+    //                     transition: opacity 0.2s;
+    //                 }
+    //                 body:hover .lulo-controls {
+    //                     opacity: 1;
+    //                 }
+    //                 /* Buttons */
+    //                 button {
+    //                     width: 36px; height: 36px;
+    //                     border-radius: 50%;
+    //                     border: none;
+    //                     color: white;
+    //                     cursor: pointer;
+    //                     display: flex; align-items: center; justify-content: center;
+    //                     font-size: 16px;
+    //                     transition: all 0.2s ease;
+    //                     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    //                 }
+    //                 button:hover { transform: scale(1.1); }
+    //                 button:active { transform: scale(0.95); }
+    //             `;
+    //         pipWindow.document.head.appendChild(style);
 
-            // Create Bubble Structure
-            const container = pipWindow.document.createElement('div');
-            container.className = 'lulo-face-bubble';
+    //         // Container
+    //         const container = pipWindow.document.createElement('div');
+    //         container.className = 'lulo-face-bubble';
 
-            const video = pipWindow.document.createElement('video');
-            video.autoplay = true;
-            video.muted = true;
-            video.playsInline = true;
-            container.appendChild(video);
+    //         // Video
+    //         const video = pipWindow.document.createElement('video');
+    //         video.autoplay = true;
+    //         video.muted = true;
+    //         video.playsInline = true;
+    //         container.appendChild(video);
 
-            // Controls
-            const controls = pipWindow.document.createElement('div');
-            controls.className = 'lulo-controls';
+    //         // Controls
+    //         const controls = pipWindow.document.createElement('div');
+    //         controls.className = 'lulo-controls';
 
-            const makeBtn = (icon, bg, action) => {
-                const btn = pipWindow.document.createElement('button');
-                btn.innerHTML = icon;
-                btn.style.background = bg;
-                btn.onclick = (e) => { e.stopPropagation(); action(btn); };
-                return btn;
-            };
+    //         const makeBtn = (icon, bg, action) => {
+    //             const btn = pipWindow.document.createElement('button');
+    //             btn.innerHTML = icon;
+    //             btn.style.background = bg || 'rgba(255,255,255,0.2)';
+    //             btn.onclick = (e) => { e.stopPropagation(); action(btn); };
+    //             return btn;
+    //         };
 
-            const stopBtn = makeBtn('⏹', '#ef4444', () => {
-                stopRecording();
-                pipWindow.close();
-            });
+    //         const stopBtn = makeBtn('⏹', '#ef4444', () => {
+    //             stopRecording();
+    //             pipWindow.close();
+    //             try { chrome.runtime.sendMessage({ type: 'OPEN_SIDEPANEL' }); } catch (e) { }
+    //         });
 
-            const glowBtn = makeBtn('✨', '#8B6DB8', (btn) => {
-                isGlowEnabled = !isGlowEnabled;
-                document.body.style.boxShadow = isGlowEnabled ? 'inset 0 0 0 8px #8B6DB8' : '';
-                btn.style.opacity = isGlowEnabled ? '1' : '0.5';
-            });
+    //         // Mirror Toggle
+    //         let isMirrored = false;
+    //         const mirrorBtn = makeBtn('🪞', '', () => {
+    //             isMirrored = !isMirrored;
+    //             video.style.transform = isMirrored ? 'scaleX(-1)' : 'scaleX(1)';
+    //         });
 
-            let isMirrored = false;
-            const mirrorBtn = makeBtn('🪞', 'rgba(255,255,255,0.3)', () => {
-                isMirrored = !isMirrored;
-                video.style.transform = isMirrored ? 'scaleX(-1)' : 'scaleX(1)';
-                mirrorBtn.style.opacity = isMirrored ? '1' : '0.6';
-            });
+    //         const cancelBtn = makeBtn('🗑️', '#ef4444', () => {
+    //             if (confirm('Discard this recording?')) {
+    //                 shouldSave = false;
+    //                 stopRecording();
+    //                 pipWindow.close();
+    //                 try { chrome.runtime.sendMessage({ type: 'OPEN_SIDEPANEL' }); } catch (e) { }
+    //             }
+    //         });
 
-            controls.appendChild(stopBtn);
-            controls.appendChild(glowBtn);
-            controls.appendChild(mirrorBtn);
-            container.appendChild(controls);
+    //         controls.appendChild(stopBtn);
+    //         controls.appendChild(mirrorBtn);
+    //         controls.appendChild(cancelBtn);
+    //         container.appendChild(controls);
 
-            pipWindow.document.body.appendChild(container);
+    //         pipWindow.document.body.appendChild(container);
 
-            // Handle PiP Close (User clicks X)
-            pipWindow.addEventListener('pagehide', () => {
-                stopRecording();
-                pipWindow = null;
-            });
+    //         // Handle PiP Close (User clicks X)
+    //         pipWindow.addEventListener('pagehide', () => {
+    //             stopRecording();
+    //             pipWindow = null;
+    //         });
 
-            // Start Camera
-            try {
-                camStream = await navigator.mediaDevices.getUserMedia({
-                    video: { width: { ideal: 720 }, aspectRatio: 1 },
-                    audio: false
-                });
-                video.srcObject = camStream;
-                await video.play();
-            } catch (e) {
-                console.warn("PiP Camera Error", e);
-                video.style.display = 'none';
-                container.innerHTML = "<div style='color:white;text-align:center;'>📷<br>Camera Error</div>";
-            }
+    //         // Start Camera
+    //         try {
+    //             if (!camStream) {
+    //                 console.log("No camStream available for PiP");
+    //                 throw new Error("Camera stream missing");
+    //             }
+    //             console.log("Setting PiP video source...");
+    //             video.srcObject = camStream;
+    //             await video.play();
+    //             console.log("PiP video playing");
+    //         } catch (e) {
+    //             console.warn("PiP Camera Error", e);
+    //             container.innerHTML = "<div style='color:white;text-align:center;font-size:24px;'>📷<br>Camera Error</div>";
+    //         }
 
-            return; // Success!
-        } catch (err) {
-            console.log("Document PiP failed, falling back to DOM overlay", err);
-        }
-    }
+    //         return; // Success!
+    //     } catch (err) {
+    //         console.log("Document PiP failed, falling back to DOM overlay", err);
+    //     }
+    // }
 
     // ===================================
     // FALLBACK: Legacy DOM Overlay
     // ===================================
+    // CRITICAL FIX: Only create DOM bubble if PiP failed or didn't run
+    // if (!pipWindow) { // This check is now redundant as PiP block is commented out
+    console.log("Creating DOM bubble (Forced Circle)");
     createFaceBubbleDOM();
+    // }
 }
 
 async function createFaceBubbleDOM() {
@@ -1710,7 +1772,7 @@ async function createFaceBubbleDOM() {
         width: '100%',
         height: '100%',
         objectFit: 'cover',
-        transform: 'scaleX(1)' // Un-mirrored by default (shows as others see you)
+        transform: 'scaleX(-1)' // Mirrored by default (Selfie mode)
     });
 
     faceBubble.appendChild(video);
@@ -1719,19 +1781,19 @@ async function createFaceBubbleDOM() {
     const controls = document.createElement('div');
     controls.className = 'lulo-controls';
     controls.style.cssText = `
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            padding: 16px 10px 20px 10px;
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
-            transform: translateY(100%);
-            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 10;
-            pointer-events: auto;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100 %;
+        padding: 16px 10px 20px 10px;
+        display: flex;
+        justify - content: center;
+        gap: 10px;
+        background: linear - gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+        transform: translateY(100 %);
+        transition: transform 0.2s cubic - bezier(0.4, 0, 0.2, 1);
+        z - index: 10;
+        pointer - events: auto;
         `;
 
     // Helper for buttons
@@ -1740,17 +1802,17 @@ async function createFaceBubbleDOM() {
         btn.innerHTML = icon;
         btn.title = title;
         btn.style.cssText = `
-                width: 36px; height: 36px;
-                border-radius: 50%;
-                border: none;
-                background: ${bg};
-                color: white;
-                cursor: pointer;
-                display: flex; align-items: center; justify-content: center;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-                transition: all 0.2s;
-                font-size: 16px;
-            `;
+        width: 36px; height: 36px;
+        border - radius: 50 %;
+        border: none;
+        background: ${bg};
+        color: white;
+        cursor: pointer;
+        display: flex; align - items: center; justify - content: center;
+        box - shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        transition: all 0.2s;
+        font - size: 16px;
+        `;
         btn.onmousedown = (e) => e.stopPropagation(); // Prevent drag
         btn.onclick = (e) => { e.stopPropagation(); action(btn); };
         btn.onmouseenter = () => btn.style.transform = 'scale(1.15)';
@@ -1773,13 +1835,13 @@ async function createFaceBubbleDOM() {
         }
     });
 
-    let isMirrored = false; // Default to un-mirrored
+    let isMirrored = true; // Default to mirrored
     const mirrorBtn = makeBtn('🪞', 'Mirror Camera', 'rgba(255,255,255,0.3)', () => {
         isMirrored = !isMirrored;
         video.style.transform = isMirrored ? 'scaleX(-1)' : 'scaleX(1)';
         mirrorBtn.style.opacity = isMirrored ? '1' : '0.6';
     });
-    mirrorBtn.style.opacity = '0.6'; // Start dimmed since not mirrored
+    mirrorBtn.style.opacity = '1'; // Start active since mirrored
 
     controls.appendChild(stopBtn);
     controls.appendChild(glowBtn);
@@ -1944,7 +2006,11 @@ function setupCompositor(screenStream, camStream) {
             ctx.restore();
         }
 
-        animationId = requestAnimationFrame(draw);
+        // Use setTimeout instead of requestAnimationFrame to prevent 
+        // throttling when the tab is in the background.
+        if (isActive) {
+            setTimeout(draw, 33); // ~30 FPS
+        }
     }
 
     // Start loop
@@ -1957,7 +2023,7 @@ function setupCompositor(screenStream, camStream) {
         stream,
         cleanup: () => {
             isActive = false;
-            if (animationId) cancelAnimationFrame(animationId);
+            // No need to cancel raf, the flag handles it
             if (screenVideo) {
                 screenVideo.pause();
                 screenVideo.srcObject = null;
@@ -1999,8 +2065,8 @@ function openScreenshotMode() {
         bottom: 0;
         background: rgba(0, 0, 0, 0.3);
         cursor: crosshair;
-        z-index: 2147483660;
-    `;
+        z - index: 2147483660;
+        `;
 
     // Selection Box
     screenshotSelection = document.createElement('div');
@@ -2010,9 +2076,9 @@ function openScreenshotMode() {
         border: 2px solid #8B6DB8;
         background: rgba(139, 109, 184, 0.1);
         display: none;
-        pointer-events: none; /* Let clicks pass through during select */
-        z-index: 2147483661;
-    `;
+        pointer - events: none; /* Let clicks pass through during select */
+        z - index: 2147483661;
+        `;
 
     // Help Text
     const helpText = document.createElement('div');
@@ -2020,17 +2086,17 @@ function openScreenshotMode() {
     helpText.style.cssText = `
         position: fixed;
         top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
+        left: 50 %;
+        transform: translateX(-50 %);
         background: #2D2B3A;
         color: white;
         padding: 8px 16px;
-        border-radius: 20px;
-        font-family: sans-serif;
-        font-size: 14px;
-        z-index: 2147483662;
-        pointer-events: none;
-    `;
+        border - radius: 20px;
+        font - family: sans - serif;
+        font - size: 14px;
+        z - index: 2147483662;
+        pointer - events: none;
+        `;
     screenshotOverlay.appendChild(helpText);
     document.body.appendChild(screenshotSelection);
     document.body.appendChild(screenshotOverlay);
@@ -2125,17 +2191,17 @@ function showScreenshotActions(rect) {
     actionBar.id = 'lulo-screenshot-actions';
     actionBar.style.cssText = `
         position: fixed;
-        left: ${rect.left}px;
-        top: ${rect.bottom + 10}px;
+        left: ${rect.left} px;
+        top: ${rect.bottom + 10} px;
         background: white;
         padding: 8px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        border - radius: 8px;
+        box - shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         display: flex;
         gap: 8px;
-        z-index: 2147483663;
+        z - index: 2147483663;
         animation: slideIn 0.2s ease;
-    `;
+        `;
 
     // Ensure it's on screen
     if (rect.bottom + 60 > window.innerHeight) {
@@ -2155,20 +2221,20 @@ function showScreenshotActions(rect) {
 
 function createActionBtn(text, icon, onClick) {
     const btn = document.createElement('button');
-    btn.innerHTML = `${icon} ${text}`;
+    btn.innerHTML = `${icon} ${text} `;
     btn.style.cssText = `
         border: none;
         background: #F5F3FA;
         color: #2D2B3A;
         padding: 6px 12px;
-        border-radius: 6px;
+        border - radius: 6px;
         cursor: pointer;
-        font-family: sans-serif;
-        font-size: 13px;
+        font - family: sans - serif;
+        font - size: 13px;
         display: flex;
-        align-items: center;
+        align - items: center;
         gap: 6px;
-    `;
+        `;
     btn.onmouseover = () => btn.style.background = '#E8E4F0';
     btn.onmouseout = () => btn.style.background = '#F5F3FA';
     btn.onclick = onClick;
@@ -2194,7 +2260,7 @@ async function captureAndAction(rect, action) {
 
             if (action === 'download') {
                 const link = document.createElement('a');
-                link.download = `lulo-screenshot-${Date.now()}.png`;
+                link.download = `lulo - screenshot - ${Date.now()}.png`;
                 link.href = croppedDataUrl;
                 link.click();
             } else if (action === 'upload') {
@@ -2248,7 +2314,7 @@ async function uploadScreenshot(dataUrl) {
     const res = await fetch(dataUrl);
     const blob = await res.blob();
     const formData = new FormData();
-    formData.append('file', blob, `screenshot-${Date.now()}.png`);
+    formData.append('file', blob, `screenshot - ${Date.now()}.png`);
 
     // We need an endpoint
     // Assuming backend will be at localhost:3000/api/images
@@ -2263,7 +2329,7 @@ async function uploadScreenshot(dataUrl) {
         const uploadRes = await fetch(API_URL, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${luloCloudToken}`
+                'Authorization': `Bearer ${luloCloudToken} `
             },
             body: formData
         });

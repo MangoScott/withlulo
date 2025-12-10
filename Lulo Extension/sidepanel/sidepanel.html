@@ -61,13 +61,39 @@
             <div class="header-top">
                 <h1 class="logo"><span class="logo-icon">🪄</span> Lulo</h1>
                 <div class="header-actions">
-                    <button id="screenshotBtn" class="settings-btn" title="Take Screenshot">📷</button>
+                    <button id="captureBtn" class="settings-btn" title="Capture">📸</button>
                     <button id="sitesBtn" class="settings-btn" title="My Sites">🌐</button>
                     <button id="settingsBtn" class="settings-btn" title="Settings">⚙️</button>
                     <button id="projectsBtn" class="settings-btn" title="Projects">📁</button>
-                    <button id="recordBtn" class="settings-btn record-btn" title="Record Screen">🎥</button>
                 </div>
             </div>
+
+            <!-- Capture Mode Overlay -->
+            <div id="captureOverlay" class="settings-panel hidden" style="width: 200px; right: 12px; left: auto;">
+                <div class="settings-header">
+                    <h2>Capture</h2>
+                    <button id="closeCapture" class="close-btn">×</button>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <button id="recordOptionBtn" class="secondary-btn"
+                        style="text-align: left; display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.2rem;">🎥</span>
+                        <div>
+                            <div style="font-weight: 600;">Record Screen</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Video message</div>
+                        </div>
+                    </button>
+                    <button id="screenshotOptionBtn" class="secondary-btn"
+                        style="text-align: left; display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.2rem;">📷</span>
+                        <div>
+                            <div style="font-weight: 600;">Screenshot</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Capture image</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
 
             <!-- Project Bar -->
             <div class="project-bar">
