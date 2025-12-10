@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { requireEnv } from './env-server';
+import { THEMES } from './themes';
 
 export interface SiteGenerationInput {
     title: string;
@@ -30,9 +31,35 @@ const getPromptForType = (type: string, input: SiteGenerationInput): string => {
         // Fallback to raw description string
     }
 
+
+
     const basePrompt = `You are an expert web designer. Generate a single-page website.`;
-    const accentColor = input.theme || '#3B82F6'; // Default to Blue
-    console.log('[SiteGenerator] Theme received:', input.theme, '-> Using accent:', accentColor);
+
+    // Resolve Theme
+    let selectedTheme = THEMES.find(t => t.id === input.theme);
+    // Backward compatibility: If input.theme is a hex code (starts with #), use Modern but override color
+    let customColor = null;
+    if (!selectedTheme && input.theme && input.theme.startsWith('#')) {
+        selectedTheme = THEMES.find(t => t.id === 'modern');
+        customColor = input.theme;
+    }
+    // Default to Modern
+    if (!selectedTheme) selectedTheme = THEMES[0];
+
+    const primaryColor = customColor || selectedTheme.colors.primary;
+
+    console.log('[SiteGenerator] Using Theme:', selectedTheme.name, 'Primary:', primaryColor);
+
+    // Prompt Construction
+    const themeInstructions = `
+        DESIGN SYSTEM (${selectedTheme.name.toUpperCase()}):
+        - Primary Color: ${primaryColor}
+        - Font Heading: '${selectedTheme.fonts.heading}'
+        - Font Body: '${selectedTheme.fonts.body}'
+        - Border Radius: ${selectedTheme.borderRadius}
+        - Style Rules: 
+          ${selectedTheme.stylePrompts}
+    `;
 
     // 1. PERSONAL WEBSITE
     if (type === 'personal') {
@@ -43,22 +70,12 @@ const getPromptForType = (type: string, input: SiteGenerationInput): string => {
         const imgParams = input.profileImage ? `USE THIS EXACT IMAGE SOURCE FOR THE PROFILE PHOTO: "${input.profileImage}"` : `Use a placeholder profile image from ui-avatars.com`;
 
         return `${basePrompt}
+        ${themeInstructions}
+
         CONTENT:
         - Name: "${name}"
         - About Me: "${about}"
         - Social Links: ${social1} ${social2}
-        
-        STYLE: Clean, minimalist, premium. 
-        PRIMARY COLOR: ${accentColor} (Use for buttons, links, highlights).
-        BACKGROUND: White (#ffffff).
-        TYPOGRAPHY: 'Inter', sans-serif.
-        
-        LAYOUT REQUIREMENTS:
-        - Desktop: Horizontal Navbar.
-        - Mobile: CRITICAL: You MUST implement a functional Hamburger Menu for the navigation. 
-          - The inputs are checkboxes or simple JS toggles.
-          - When closed: Show Hamburger Icon (☰).
-          - When open: Show Fullscreen or Dropdown Menu.
         
         STRUCTURE:
         - Header: Name (Left) + Nav [About, Contact] (Right/Hamburger).
@@ -66,7 +83,10 @@ const getPromptForType = (type: string, input: SiteGenerationInput): string => {
         - Profile Image: ${imgParams} (Rounded and prominent).
         - Bio Section: Elegant typography, generous whitespace.
         - Social Section: Minimalist icon buttons.
-        - Contact: "Get in Touch" button using the accent color.
+        - Contact: "Get in Touch" button.
+        
+        MOBILE REQUIREMENTS:
+        - Implement a functional Hamburger Menu for mobile.
         `;
     }
 
@@ -78,21 +98,19 @@ const getPromptForType = (type: string, input: SiteGenerationInput): string => {
         const imgParams = input.profileImage ? `USE THIS EXACT IMAGE SOURCE FOR THE AVATAR: "${input.profileImage}"` : `Use https://ui-avatars.com/api/?name=${encodeURIComponent(handle)}&background=random`;
 
         return `${basePrompt}
+        ${themeInstructions}
+
         CONTENT:
         - Handle: "${handle}"
         - Bio: "${bio}"
         - Links: \n${links}
         
-        STYLE: Modern, mobile-first, centered card layout.
-        PRIMARY COLOR: ${accentColor} (buttons, icons, gradients).
-        BACKGROUND: Soft gradient using the PRIMARY COLOR (very light opacity).
-        
         STRUCTURE:
-        - Container: Centered Card (max-width 480px) with drop shadow.
+        - Container: Centered Card (max-width 480px).
         - Avatar: Circle Image (100x100). ${imgParams}
         - Name: H1 Centered.
-        - Bio: Small text under name, muted color.
-        - Links: Stack of full-width buttons. Background: ${accentColor}, Text: White. Hover effects.
+        - Bio: Small text under name.
+        - Links: Stack of full-width buttons.
         `;
     }
 
@@ -104,24 +122,24 @@ const getPromptForType = (type: string, input: SiteGenerationInput): string => {
         const email = data.email || "";
 
         return `${basePrompt}
+        ${themeInstructions}
+
         CONTENT:
         - Business Name: "${busName}"
         - Tagline: "${tagline}"
         - Services: "${services}"
         - Contact: "${email}"
         
-        STYLE: Trustworthy, corporate but modern.
-        PRIMARY COLOR: ${accentColor}.
         STRUCTURE:
         - Navbar: Logo + Contact Button
-        - Hero: Headline "${busName}", Subhead "${tagline}". high-quality background (unsplash).
-        - Services Grid: 3-item grid. Icons using the accent color.
+        - Hero: Headline "${busName}", Subhead "${tagline}".
+        - Services Grid: 3-item grid.
         - Testimonials: ONE placeholder testimonial.
         - Contact: Footer with email link.
         `;
     }
 
-    return `${basePrompt} Description: "${input.description}"`;
+    return `${basePrompt} ${themeInstructions} Description: "${input.description}"`;
 };
 
 export async function generateSite(input: SiteGenerationInput): Promise<GeneratedSite> {
@@ -170,16 +188,12 @@ export async function generateSite(input: SiteGenerationInput): Promise<Generate
     const promptText = `${specificPrompt}
     
     DESIGN REQUIREMENTS (CRITICAL):
-    - Use 'DM Sans' or 'Inter' from Google Fonts.
     - Ensure fully responsive mobile design.
-    - Use generous whitespace and rounded corners.
-    - Button styles should be modern (no default borders).
-    - **CRITICAL COLOR ENFORCEMENT**: 
-      1. You MUST define a CSS variable in :root like this: --primary: ${input.theme || '#3B82F6'};
-      2. You MUST use var(--primary) for ALL main buttons, links, icons, and active states.
-      3. Do NOT use purple (#8B6DB8) or blue unless that is the provided color.
-      4. If the user provided Orange (#F97316), the buttons MUST BE Orange.
-      5. **IMPORTANT**: Wrap your CSS in a <style> block inside the HTML. Ensure :root { --primary: ... } is the VERY FIRST line of CSS.
+    - Use generous whitespace.
+    - **CRITICAL**: 
+      1. You MUST define CSS variables: --primary, --text, --background, --radius, --font-heading, --font-body.
+      2. You MUST use these variables throughout the CSS.
+      3. Wrap your CSS in a <style> block inside the HTML.
 
     OUTPUT FORMAT:
     Return ONLY valid JSON with this exact structure:
@@ -226,20 +240,55 @@ export async function generateSite(input: SiteGenerationInput): Promise<Generate
         throw new Error('Failed to generate site: Missing HTML content');
     }
 
-    // FORCE INJECT the primary color CSS variable to guarantee it's used
-    const primaryColor = input.theme || '#3B82F6';
-    const colorInjection = `<style>:root { --primary: ${primaryColor} !important; } button, .btn, a.btn, [class*="button"], [class*="cta"] { background-color: var(--primary) !important; border-color: var(--primary) !important; } a:hover { color: var(--primary) !important; }</style>`;
+    // Resolve Theme again for injection
+    let selectedTheme = THEMES.find(t => t.id === input.theme);
+    let customColor = null;
+    if (!selectedTheme && input.theme && input.theme.startsWith('#')) {
+        selectedTheme = THEMES.find(t => t.id === 'modern');
+        customColor = input.theme;
+    }
+    if (!selectedTheme) selectedTheme = THEMES[0];
+    const primaryColor = customColor || selectedTheme.colors.primary;
+
+    // FORCE INJECT CSS Variables and Font Imports to guarantee strict design adherence
+    const themeInjection = `
+        <link rel="stylesheet" href="${selectedTheme.fonts.url}">
+        <style>
+            :root { 
+                --primary: ${primaryColor} !important; 
+                --background: ${selectedTheme.colors.background} !important;
+                --text: ${selectedTheme.colors.text} !important;
+                --radius: ${selectedTheme.borderRadius} !important;
+                --font-heading: '${selectedTheme.fonts.heading}', sans-serif !important;
+                --font-body: '${selectedTheme.fonts.body}', sans-serif !important;
+            }
+            body { 
+                font-family: var(--font-body); 
+                background-color: var(--background); 
+                color: var(--text); 
+            }
+            h1, h2, h3, h4, h5, h6 { 
+                font-family: var(--font-heading); 
+            }
+            button, .btn, a.btn, [class*="button"], [class*="cta"] { 
+                background-color: var(--primary) !important; 
+                border-color: var(--primary) !important; 
+                border-radius: var(--radius) !important;
+            } 
+            a:hover { color: var(--primary) !important; }
+        </style>
+    `;
 
     let finalHtml = parsed.html;
     if (finalHtml.includes('</head>')) {
-        finalHtml = finalHtml.replace('</head>', colorInjection + '</head>');
+        finalHtml = finalHtml.replace('</head>', themeInjection + '</head>');
     } else if (finalHtml.includes('<body')) {
-        finalHtml = finalHtml.replace('<body', colorInjection + '<body');
+        finalHtml = finalHtml.replace('<body', themeInjection + '<body');
     } else {
-        finalHtml = colorInjection + finalHtml;
+        finalHtml = themeInjection + finalHtml;
     }
 
-    console.log('[SiteGenerator] Injected color override:', primaryColor);
+    console.log('[SiteGenerator] Injected theme override:', selectedTheme.name);
 
     return {
         html: finalHtml,

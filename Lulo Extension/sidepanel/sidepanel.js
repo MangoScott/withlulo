@@ -71,13 +71,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const generatingStatus = document.getElementById('generatingStatus');
     const typeButtons = document.querySelectorAll('.template-card');
 
-    const THEME_COLORS = [
-        '#3B82F6', // Blue
-        '#8B5CF6', // Purple
-        '#10B981', // Green
-        '#F59E0B', // Orange
-        '#EF4444', // Red
-        '#1F2937'  // Dark
+    const THEMES = [
+        { id: 'modern', name: 'Modern', color: '#F97316' },
+        { id: 'swiss', name: 'Swiss', color: '#000000' },
+        { id: 'neon', name: 'Neon', color: '#8B5CF6' }
     ];
 
     let conversationHistory = [];
@@ -88,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let dragCounter = 0;
     let userSites = [];
     let selectedBusinessType = '';
-    let selectedThemeColor = THEME_COLORS[0];
+    let selectedThemeId = THEMES[0].id;
     let currentGeneratedSite = null;
 
     let saveState = () => {
@@ -160,12 +157,24 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add Theme Selector
         html += `
         <div style="margin-top:16px; margin-bottom:16px;">
-            <label class="theme-label">Accent Color</label>
-            <div class="theme-selector">
-                ${THEME_COLORS.map(color => `
-                    <div class="color-circle ${color === selectedThemeColor ? 'selected' : ''}" 
-                         style="background-color: ${color};" 
-                         data-color="${color}"></div>
+            <label class="theme-label">Visual Style</label>
+            <div class="theme-selector" style="display:flex; gap:8px;">
+                ${THEMES.map(t => `
+                    <div class="theme-card ${t.id === selectedThemeId ? 'selected' : ''}" 
+                         style="
+                            flex:1; 
+                            padding:10px; 
+                            border:2px solid var(--border-subtle); 
+                            border-radius:8px; 
+                            cursor:pointer; 
+                            text-align:center;
+                            background: var(--bg-card);
+                            transition: all 0.2s;
+                         "
+                         data-id="${t.id}">
+                        <div style="width:24px; height:24px; background:${t.color}; border-radius:50%; margin:0 auto 4px;"></div>
+                        <div style="font-size:0.75rem; font-weight:600; color:var(--text-secondary);">${t.name}</div>
+                    </div>
                 `).join('')}
             </div>
         </div>
@@ -182,15 +191,20 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = html;
 
         // Add Event Listeners for Color Circles
-        const circles = container.querySelectorAll('.color-circle');
-        circles.forEach(circle => {
-            circle.addEventListener('click', () => {
+        // Add Event Listeners for Theme Cards
+        const cards = container.querySelectorAll('.theme-card');
+        cards.forEach(card => {
+            card.addEventListener('click', () => {
                 // Update State
-                selectedThemeColor = circle.dataset.color;
+                selectedThemeId = card.dataset.id;
 
-                // Update UI
-                circles.forEach(c => c.classList.remove('selected'));
-                circle.classList.add('selected');
+                // Update UI: Simple toggle class
+                cards.forEach(c => {
+                    c.style.borderColor = 'var(--border-subtle)';
+                    c.style.background = 'var(--bg-card)';
+                });
+                card.style.borderColor = 'var(--accent-primary)';
+                card.style.background = 'var(--accent-soft)';
             });
         });
 
@@ -342,10 +356,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({
                     title,
-                    description, // This now contains the JSON string of form data
+                    description,
                     businessType: selectedBusinessType,
-                    theme: selectedThemeColor || '#3B82F6',
-                    fileData, // Base64
+                    theme: selectedThemeId, // Pass the ID
+                    fileData,
                     mimeType,
                     subdomain
                 })
