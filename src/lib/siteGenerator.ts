@@ -226,8 +226,23 @@ export async function generateSite(input: SiteGenerationInput): Promise<Generate
         throw new Error('Failed to generate site: Missing HTML content');
     }
 
+    // FORCE INJECT the primary color CSS variable to guarantee it's used
+    const primaryColor = input.theme || '#3B82F6';
+    const colorInjection = `<style>:root { --primary: ${primaryColor} !important; } button, .btn, a.btn, [class*="button"], [class*="cta"] { background-color: var(--primary) !important; border-color: var(--primary) !important; } a:hover { color: var(--primary) !important; }</style>`;
+
+    let finalHtml = parsed.html;
+    if (finalHtml.includes('</head>')) {
+        finalHtml = finalHtml.replace('</head>', colorInjection + '</head>');
+    } else if (finalHtml.includes('<body')) {
+        finalHtml = finalHtml.replace('<body', colorInjection + '<body');
+    } else {
+        finalHtml = colorInjection + finalHtml;
+    }
+
+    console.log('[SiteGenerator] Injected color override:', primaryColor);
+
     return {
-        html: parsed.html,
+        html: finalHtml,
         css: parsed.css || ''
     };
 }

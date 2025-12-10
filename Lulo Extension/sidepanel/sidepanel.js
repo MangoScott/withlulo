@@ -64,8 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const wizardStep4 = document.getElementById('wizardStep4');
     const wizardBack = document.getElementById('wizardBack');
     const wizardGenerate = document.getElementById('wizardGenerate');
-    const wizardEdit = document.getElementById('wizardEdit');
-    const wizardPublish = document.getElementById('wizardPublish');
+    const wizardSave = document.getElementById('wizardSave');
     const siteTitleInput = document.getElementById('siteTitle');
     const siteDescriptionInput = document.getElementById('siteDescription');
     const sitePreviewFrame = document.getElementById('sitePreviewFrame');
@@ -1119,10 +1118,15 @@ document.addEventListener('DOMContentLoaded', () => {
         wizardBack.addEventListener('click', () => showWizardStep(1));
     }
 
-    if (wizardEdit) {
-        wizardEdit.addEventListener('click', () => {
-            // Re-open wizard with existing data populated
-            showWizardStep(2);
+    if (wizardSave) {
+        wizardSave.addEventListener('click', () => {
+            // Redirect to the dashboard for the created site
+            if (currentGeneratedSite && currentGeneratedSite.id) {
+                chrome.tabs.create({ url: `${WEB_URL}/dashboard/sites/${currentGeneratedSite.id}` });
+            } else {
+                chrome.tabs.create({ url: `${WEB_URL}/dashboard/sites` });
+            }
+            resetWizard();
         });
     }
 
