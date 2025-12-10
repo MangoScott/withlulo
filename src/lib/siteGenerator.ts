@@ -178,6 +178,7 @@ export async function generateSite(input: SiteGenerationInput): Promise<Generate
       2. You MUST use var(--primary) for ALL main buttons, links, icons, and active states.
       3. Do NOT use purple (#8B6DB8) or blue unless that is the provided color.
       4. If the user provided Orange (#F97316), the buttons MUST BE Orange.
+      5. **IMPORTANT**: Wrap your CSS in a <style> block inside the HTML. Ensure :root { --primary: ... } is the VERY FIRST line of CSS.
 
     OUTPUT FORMAT:
     Return ONLY valid JSON with this exact structure:

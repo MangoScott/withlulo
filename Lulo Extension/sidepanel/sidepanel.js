@@ -1119,6 +1119,13 @@ document.addEventListener('DOMContentLoaded', () => {
         wizardBack.addEventListener('click', () => showWizardStep(1));
     }
 
+    if (wizardEdit) {
+        wizardEdit.addEventListener('click', () => {
+            // Re-open wizard with existing data populated
+            showWizardStep(2);
+        });
+    }
+
 
 
 }); // END DOMContentLoaded
