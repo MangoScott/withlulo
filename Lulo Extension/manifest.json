@@ -13,14 +13,11 @@
     ],
     "host_permissions": [
         "https://*.heylulo.com/*",
-        "https://*.heylulo.com/*",
         "https://heylulo.com/*",
-        "https://lulo-agent.pages.dev/*",
-        "<all_urls>"
+        "https://lulo-agent.pages.dev/*"
     ],
     "externally_connectable": {
         "matches": [
-            "http://localhost:3000/*",
             "https://*.heylulo.com/*",
             "https://heylulo.com/*",
             "https://lulo-agent.pages.dev/*"

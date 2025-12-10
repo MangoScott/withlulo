@@ -1,9 +1,9 @@
 // Side Panel JavaScript
 document.addEventListener('DOMContentLoaded', () => {
 
-    const WEB_URL = 'https://lulo-agent.pages.dev';
+    const WEB_URL = 'https://heylulo.com';
     const AUTH_URL = `${WEB_URL}/connect`;
-
+    const API_URL = `${WEB_URL}/api`;
     // DOM Elements
     const chatContainer = document.getElementById('chatContainer');
     const taskInput = document.getElementById('taskInput');
@@ -563,7 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // PRESENTATION: Lulo Loom
     // ==========================================
     const logo = document.querySelector('.logo');
-    if (logo) logo.addEventListener('click', () => chrome.tabs.create({ url: 'https://lulo-agent.pages.dev/dashboard' }));
+    if (logo) logo.addEventListener('click', () => chrome.tabs.create({ url: 'https://heylulo.com/dashboard' }));
 
     // ==========================================
     // UNIFIED CAPTURE HANDLERS
@@ -973,7 +973,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Create Conversation if needed (Lazy Create)
             if (!conversationId) {
                 console.log('Creating new cloud conversation...');
-                const res = await fetch('https://lulo-agent.pages.dev/api/conversations', {
+                const res = await fetch('https://heylulo.com/api/conversations', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -997,7 +997,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (conversationId) {
                 // Append Message
-                await fetch(`https://lulo-agent.pages.dev/api/conversations/${conversationId}/messages`, {
+                await fetch(`https://heylulo.com/api/conversations/${conversationId}/messages`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
