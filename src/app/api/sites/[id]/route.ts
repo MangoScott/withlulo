@@ -73,6 +73,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
         // If regeneration is requested, run the AI
         if (shouldRegenerate && description && businessType) {
+            console.log('[PATCH Sites] Regenerating with theme:', theme);
             try {
                 const generated = await generateSite({
                     title: title || 'My Website', // Fallback if not provided, though it should be
