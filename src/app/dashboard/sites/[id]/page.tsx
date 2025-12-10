@@ -87,7 +87,10 @@ export default function SiteDetailPage() {
 
     function copyLink() {
         if (!site) return;
-        const url = `${window.location.origin}/s/${site.slug}`;
+        // Use subdomain URL if subdomain is set, otherwise fallback to slug
+        const url = site.subdomain
+            ? `https://${site.subdomain}.heylulo.com`
+            : `${window.location.origin}/s/${site.slug}`;
         navigator.clipboard.writeText(url);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -182,12 +185,12 @@ export default function SiteDetailPage() {
                 <div className={styles.linkBar}>
                     <span className={styles.linkLabel}>Live URL:</span>
                     <a
-                        href={`/s/${site.slug}`}
+                        href={site.subdomain ? `https://${site.subdomain}.heylulo.com` : `/s/${site.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={styles.liveLink}
                     >
-                        {typeof window !== 'undefined' ? window.location.origin : ''}/s/{site.slug}
+                        {site.subdomain ? `${site.subdomain}.heylulo.com` : `heylulo.com/s/${site.slug}`}
                     </a>
                 </div>
             )}
@@ -197,7 +200,9 @@ export default function SiteDetailPage() {
                     <div className={styles.dots}>
                         <span></span><span></span><span></span>
                     </div>
-                    <div className={styles.urlBar}>heylulo.com/s/{site.slug}</div>
+                    <div className={styles.urlBar}>
+                        {site.subdomain ? `${site.subdomain}.heylulo.com` : `heylulo.com/s/${site.slug}`}
+                    </div>
                 </div>
                 <iframe
                     srcDoc={site.html_content || ''}

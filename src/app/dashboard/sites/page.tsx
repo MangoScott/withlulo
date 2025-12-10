@@ -144,7 +144,7 @@ export default function SitesPage() {
                                     </Link>
                                     {site.published && (
                                         <a
-                                            href={`/s/${site.slug}`}
+                                            href={site.subdomain ? `https://${site.subdomain}.heylulo.com` : `/s/${site.slug}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className={styles.actionBtn}
