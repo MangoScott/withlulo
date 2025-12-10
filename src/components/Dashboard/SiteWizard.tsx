@@ -41,6 +41,7 @@ export default function SiteWizard({ mode = 'create', initialData, onCancel, onS
     const [theme, setTheme] = useState(THEME_COLORS[0].hex);
     const [userData, setUserData] = useState<any>(null); // Store fetched user data
     const [error, setError] = useState('');
+    const [subdomain, setSubdomain] = useState('');
     const [loadingText, setLoadingText] = useState(mode === 'edit' ? 'Updating your site...' : 'Creating your site...');
 
     // Load User Data
@@ -64,6 +65,7 @@ export default function SiteWizard({ mode = 'create', initialData, onCancel, onS
             setStep('details');
             setBusinessType(initialData.business_type || 'personal');
             setTheme(initialData.theme || THEME_COLORS[0].hex);
+            setSubdomain(initialData.subdomain || initialData.slug || '');
             try {
                 const parsed = JSON.parse(initialData.description);
                 if (parsed.fields) {
@@ -165,7 +167,9 @@ export default function SiteWizard({ mode = 'create', initialData, onCancel, onS
                 title,
                 description,
                 businessType,
-                theme: theme
+                businessType,
+                theme: theme,
+                subdomain: subdomain // Add subdomain
             };
 
             if (fileData) {
@@ -226,6 +230,28 @@ export default function SiteWizard({ mode = 'create', initialData, onCancel, onS
     const renderFormFields = () => {
         if (businessType === 'personal') return (
             <>
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>Claim URL (Subdomain)</label>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <input
+                            name="subdomain"
+                            className={styles.input}
+                            placeholder="yourname"
+                            value={subdomain}
+                            onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                            style={{ borderRadius: '6px 0 0 6px', borderRight: 'none' }}
+                        />
+                        <div style={{
+                            background: '#f3f4f6',
+                            padding: '10px 12px',
+                            border: '2px solid #e5e7eb',
+                            borderLeft: 'none',
+                            borderRadius: '0 6px 6px 0',
+                            color: '#6b7280',
+                            fontSize: '0.9rem'
+                        }}>.heylulo.com</div>
+                    </div>
+                </div>
                 <div className={styles.formGroup}>
                     <label className={styles.label}>Full Name</label>
                     <input name="name" className={styles.input} placeholder="Jane Doe" value={formData.name || ''} onChange={handleInputChange} />
@@ -294,6 +320,28 @@ export default function SiteWizard({ mode = 'create', initialData, onCancel, onS
         if (businessType === 'bio-card') return (
             <>
                 <div className={styles.formGroup}>
+                    <label className={styles.label}>Claim URL (Subdomain)</label>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <input
+                            name="subdomain"
+                            className={styles.input}
+                            placeholder="yourname"
+                            value={subdomain}
+                            onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                            style={{ borderRadius: '6px 0 0 6px', borderRight: 'none' }}
+                        />
+                        <div style={{
+                            background: '#f3f4f6',
+                            padding: '10px 12px',
+                            border: '2px solid #e5e7eb',
+                            borderLeft: 'none',
+                            borderRadius: '0 6px 6px 0',
+                            color: '#6b7280',
+                            fontSize: '0.9rem'
+                        }}>.heylulo.com</div>
+                    </div>
+                </div>
+                <div className={styles.formGroup}>
                     <label className={styles.label}>Handle / Name</label>
                     <input name="handle" className={styles.input} placeholder="@janedoe" value={formData.handle || ''} onChange={handleInputChange} />
                 </div>
@@ -359,6 +407,28 @@ export default function SiteWizard({ mode = 'create', initialData, onCancel, onS
 
         return (
             <>
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>Claim URL (Subdomain)</label>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <input
+                            name="subdomain"
+                            className={styles.input}
+                            placeholder="acmecorp"
+                            value={subdomain}
+                            onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                            style={{ borderRadius: '6px 0 0 6px', borderRight: 'none' }}
+                        />
+                        <div style={{
+                            background: '#f3f4f6',
+                            padding: '10px 12px',
+                            border: '2px solid #e5e7eb',
+                            borderLeft: 'none',
+                            borderRadius: '0 6px 6px 0',
+                            color: '#6b7280',
+                            fontSize: '0.9rem'
+                        }}>.heylulo.com</div>
+                    </div>
+                </div>
                 <div className={styles.formGroup}>
                     <label className={styles.label}>Business Name</label>
                     <input name="businessName" className={styles.input} placeholder="Acme Corp" value={formData.businessName || ''} onChange={handleInputChange} />

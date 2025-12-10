@@ -50,7 +50,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         }
 
         const body = await request.json();
-        const { title, description, published, shouldRegenerate, businessType, theme, profileImage, fileData, mimeType } = body;
+        const { title, description, published, shouldRegenerate, businessType, theme, profileImage, fileData, mimeType, subdomain } = body;
 
         const supabase = createServerClient();
 
@@ -61,6 +61,15 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         if (published !== undefined) updates.published = published;
         if (businessType !== undefined) updates.business_type = businessType;
         if (theme !== undefined) updates.theme = theme;
+
+        // Validate and update subdomain if provided
+        if (subdomain !== undefined) {
+            const cleanSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
+            if (cleanSubdomain.length < 3) {
+                return NextResponse.json({ error: 'Subdomain must be at least 3 chars' }, { status: 400 });
+            }
+            updates.subdomain = cleanSubdomain;
+        }
 
         // If regeneration is requested, run the AI
         if (shouldRegenerate && description && businessType) {
