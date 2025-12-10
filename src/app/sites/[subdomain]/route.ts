@@ -20,11 +20,23 @@ export async function GET(request: NextRequest, { params }: { params: { subdomai
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { data: site, error } = await supabase
+    // Check subdomain first, then fall back to slug for backwards compatibility
+    let { data: site, error } = await supabase
         .from('sites')
         .select('html_content, css_content, title')
         .eq('subdomain', subdomain)
         .single();
+
+    // Fallback: try matching by slug if subdomain not found
+    if (!site || error) {
+        const slugResult = await supabase
+            .from('sites')
+            .select('html_content, css_content, title')
+            .eq('slug', subdomain)
+            .single();
+        site = slugResult.data;
+        error = slugResult.error;
+    }
 
     if (error || !site) {
         return new NextResponse(`Site not found for subdomain: ${subdomain}`, { status: 404 });
