@@ -21,24 +21,33 @@ export async function GET(request: NextRequest, { params }: { params: { subdomai
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Check subdomain first, then fall back to slug for backwards compatibility
+    // Only return published sites
+    console.log('[Sites Route] Querying for subdomain:', subdomain);
     let { data: site, error } = await supabase
         .from('sites')
-        .select('html_content, css_content, title')
+        .select('html_content, css_content, title, published')
         .eq('subdomain', subdomain)
+        .eq('published', true)
         .single();
+
+    console.log('[Sites Route] Subdomain query result:', site ? 'Found' : 'Not found', error?.message);
 
     // Fallback: try matching by slug if subdomain not found
     if (!site || error) {
+        console.log('[Sites Route] Trying slug fallback for:', subdomain);
         const slugResult = await supabase
             .from('sites')
-            .select('html_content, css_content, title')
+            .select('html_content, css_content, title, published')
             .eq('slug', subdomain)
+            .eq('published', true)
             .single();
         site = slugResult.data;
         error = slugResult.error;
+        console.log('[Sites Route] Slug query result:', site ? 'Found' : 'Not found', error?.message);
     }
 
     if (error || !site) {
+        console.log('[Sites Route] Final result: Site not found for:', subdomain);
         return new NextResponse(`Site not found for subdomain: ${subdomain}`, { status: 404 });
     }
 
