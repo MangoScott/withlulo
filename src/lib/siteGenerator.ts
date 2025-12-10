@@ -48,7 +48,7 @@ const getPromptForType = (type: string, input: SiteGenerationInput): string => {
         - Social Links: ${social1} ${social2}
         
         STYLE: Clean, minimalist, premium. 
-        ACCENT COLOR: ${accentColor}.
+        PRIMARY COLOR: ${accentColor} (Use for buttons, links, highlights).
         BACKGROUND: White (#ffffff).
         TYPOGRAPHY: 'Inter', sans-serif.
         
@@ -83,8 +83,8 @@ const getPromptForType = (type: string, input: SiteGenerationInput): string => {
         - Links: \n${links}
         
         STYLE: Modern, mobile-first, centered card layout.
-        ACCENT COLOR: ${accentColor}.
-        BACKGROUND: Soft gradient using the accent color (very light opacity).
+        PRIMARY COLOR: ${accentColor} (buttons, icons, gradients).
+        BACKGROUND: Soft gradient using the PRIMARY COLOR (very light opacity).
         
         STRUCTURE:
         - Container: Centered Card (max-width 480px) with drop shadow.
@@ -110,7 +110,7 @@ const getPromptForType = (type: string, input: SiteGenerationInput): string => {
         - Contact: "${email}"
         
         STYLE: Trustworthy, corporate but modern.
-        ACCENT COLOR: ${accentColor}.
+        PRIMARY COLOR: ${accentColor}.
         STRUCTURE:
         - Navbar: Logo + Contact Button
         - Hero: Headline "${busName}", Subhead "${tagline}". high-quality background (unsplash).
@@ -173,7 +173,11 @@ export async function generateSite(input: SiteGenerationInput): Promise<Generate
     - Ensure fully responsive mobile design.
     - Use generous whitespace and rounded corners.
     - Button styles should be modern (no default borders).
-    - **CRITICAL**: You MUST use the provided ACCENT COLOR (${input.theme || '#3B82F6'}) for all main buttons, links, and highlights. Do NOT use a random color. Define a CSS variable: --accent: ${input.theme || '#3B82F6'}; and use it.
+    - **CRITICAL COLOR ENFORCEMENT**: 
+      1. You MUST define a CSS variable in :root like this: --primary: ${input.theme || '#3B82F6'};
+      2. You MUST use var(--primary) for ALL main buttons, links, icons, and active states.
+      3. Do NOT use purple (#8B6DB8) or blue unless that is the provided color.
+      4. If the user provided Orange (#F97316), the buttons MUST BE Orange.
 
     OUTPUT FORMAT:
     Return ONLY valid JSON with this exact structure:
