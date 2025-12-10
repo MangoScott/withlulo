@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        let { title, description, businessType, theme, fileData, mimeType, profileImage, subdomain } = body;
+        let { title, description, businessType, theme, customColor, fileData, mimeType, profileImage, subdomain } = body;
 
         // Auto-use profile picture from auth provider if not provided
         if (!profileImage && user.user_metadata?.avatar_url) {
@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
             description,
             businessType,
             theme,
+            customColor,
             fileData,
             mimeType,
             profileImage

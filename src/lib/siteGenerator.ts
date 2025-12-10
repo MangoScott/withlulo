@@ -161,16 +161,10 @@ export async function generateSite(input: SiteGenerationInput): Promise<Generate
 
     try {
         // Try accessing directly from process.env first (Cloudflare sometimes puts it there directly)
-        // Check LULO_GEMINI_KEY first (to bypass potential naming conflicts)
         apiKey = process.env.LULO_GEMINI_KEY || process.env.GEMINI_API_KEY;
 
         if (!apiKey) {
-            // Try via getRequestContext
-            try {
-                apiKey = requireEnv('LULO_GEMINI_KEY');
-            } catch {
-                apiKey = requireEnv('GEMINI_API_KEY');
-            }
+            try { apiKey = requireEnv('LULO_GEMINI_KEY'); } catch { apiKey = requireEnv('GEMINI_API_KEY'); }
         }
     } catch (e) {
         const availableKeys = getDebugKeys().join(', ');
@@ -197,6 +191,7 @@ export async function generateSite(input: SiteGenerationInput): Promise<Generate
       1. You MUST define CSS variables: --primary, --text, --background, --radius, --font-heading, --font-body.
       2. You MUST use these variables throughout the CSS.
       3. Wrap your CSS in a <style> block inside the HTML.
+      4. DO NOT use markdown code blocks (\`\`\`) in your response. just return valid JSON.
 
     OUTPUT FORMAT:
     Return ONLY valid JSON with this exact structure:
@@ -207,7 +202,6 @@ export async function generateSite(input: SiteGenerationInput): Promise<Generate
 
     let parts: any[] = [promptText];
 
-    // Add file data if present
     if (input.fileData && input.mimeType) {
         parts.push({
             inlineData: {
@@ -222,28 +216,28 @@ export async function generateSite(input: SiteGenerationInput): Promise<Generate
     const response = await result.response;
     const text = response.text();
 
-    // Parse the JSON response
     let parsed: { html: string; css: string };
     try {
-        // Try to extract JSON if wrapped in code blocks
-        let jsonText = text;
-        if (text.includes('```')) {
-            const match = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-            if (match) {
-                jsonText = match[1].trim();
-            }
+        let jsonText = text.trim();
+        if (jsonText.startsWith('```')) {
+            jsonText = jsonText.replace(/^```(json)?\n?/, '').replace(/\n?```$/, '');
+        }
+        const firstBrace = jsonText.indexOf('{');
+        const lastBrace = jsonText.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1) {
+            jsonText = jsonText.substring(firstBrace, lastBrace + 1);
         }
         parsed = JSON.parse(jsonText);
     } catch (e) {
         console.error('Failed to parse AI response:', text);
-        throw new Error('Failed to generate site: Invalid response format');
+        const snippet = text.slice(0, 100).replace(/\n/g, ' ');
+        throw new Error(`Failed to generate site: Invalid AI response. (${snippet}...)`);
     }
 
     if (!parsed.html || typeof parsed.html !== 'string') {
         throw new Error('Failed to generate site: Missing HTML content');
     }
 
-    // Resolve Theme again for injection
     let selectedTheme = THEMES.find(t => t.id === input.theme);
     let customColor = null;
     if (!selectedTheme && input.theme && input.theme.startsWith('#')) {
@@ -253,8 +247,6 @@ export async function generateSite(input: SiteGenerationInput): Promise<Generate
     if (!selectedTheme) selectedTheme = THEMES[0];
     const primaryColor = input.customColor || customColor || selectedTheme.colors.primary;
 
-    // FORCE INJECT CSS Variables and Font Imports to guarantee strict design adherence
-    // Added --button-text for contrast
     const themeInjection = `
         <link rel="stylesheet" href="${selectedTheme.fonts.url}">
         <style>
@@ -301,6 +293,7 @@ export async function generateSite(input: SiteGenerationInput): Promise<Generate
         css: parsed.css || ''
     };
 }
+
 
 // Generate a URL-safe slug from title
 export function generateSlug(title: string): string {
