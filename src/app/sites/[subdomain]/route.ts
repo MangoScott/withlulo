@@ -5,6 +5,7 @@ export const runtime = 'edge';
 
 export async function GET(request: NextRequest, { params }: { params: { subdomain: string } }) {
     const subdomain = params.subdomain;
+    console.log('[Sites Route] Looking up subdomain:', subdomain);
 
     if (!subdomain) {
         return new NextResponse('Subdomain not found', { status: 404 });

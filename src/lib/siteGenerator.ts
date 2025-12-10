@@ -32,6 +32,7 @@ const getPromptForType = (type: string, input: SiteGenerationInput): string => {
 
     const basePrompt = `You are an expert web designer. Generate a single-page website.`;
     const accentColor = input.theme || '#3B82F6'; // Default to Blue
+    console.log('[SiteGenerator] Theme received:', input.theme, '-> Using accent:', accentColor);
 
     // 1. PERSONAL WEBSITE
     if (type === 'personal') {
